@@ -1,0 +1,39 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dynamicFvMesh           turboFvMesh;
+
+turboFvMeshCoeffs
+{
+    coordinateSystem
+    {
+        type                  cylindrical ;
+        origin                (0 0 0 ) ;
+        axis                  (0 0 1 ) ;
+        direction             (1 0 0 ) ;
+    }
+    rpm
+    {
+        solid 2864.8;
+    }
+    slider
+    {
+        cyclicHub1_faces 2864.8;
+        cyclicHub2_faces 2864.8;
+    }
+}
+// ************************************************************************* //
+

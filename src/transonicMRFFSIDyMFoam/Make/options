@@ -1,0 +1,36 @@
+EXE_INC = \
+    -I../godunovFlux/ \
+    -I../timeStepping \
+    -I../timeStepping/localTimeStep \
+    -I../transonicMRFDyMFoam \
+    -I../transonicMRFChtDyMFoam \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
+    -I$(LIB_SRC)/turbulenceModels/compressible/RAS/lnInclude \
+    -I$(LIB_SRC)/turbulenceModels \
+    -I$(LIB_SRC)/turbulenceModels/compressible/turbulenceModel \
+    -I$(LIB_SRC)/dynamicMesh/dynamicFvMesh/lnInclude \
+    -I$(LIB_SRC)/dynamicMesh/dynamicMesh/lnInclude \
+    -I$(LIB_SRC)/meshTools/lnInclude\
+    $(WM_DECOMP_INC) \
+    -I$(LIB_SRC)/tetDecompositionFiniteElement/lnInclude \
+    -I$(LIB_SRC)/tetDecompositionMotionSolver/lnInclude
+
+
+EXE_LIBS = \
+    -lbasicThermophysicalModels \
+    -lspecie \
+    -lcompressibleTurbulenceModel \
+    -lcompressibleRASModels \
+    -lcompressibleLESModels \
+    -lfiniteVolume \
+    -lmeshTools \
+    -ldynamicFvMesh \
+    -ldynamicMesh \
+    -L$(FOAM_USER_LIBBIN) \
+    -lDensityBasedSolvers \
+    -lGodunovFlux \
+    -lspecie \
+     $(WM_DECOMP_LIBS) \
+    -llduSolvers

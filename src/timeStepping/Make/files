@@ -1,0 +1,12 @@
+localTimeStep/localTimeStep.C
+backwardDualDdtScheme/backwardDualDdtSchemes.C
+EulerLocalDdtScheme/EulerLocalDdtSchemes.C
+
+isentropicTotalTemperature/isentropicTotalTemperatureFvPatchScalarField.C
+temperatureDirectedInletOutletVelocity/temperatureDirectedInletOutletVelocityFvPatchVectorField.C
+temperatureDirectedInletVelocity/temperatureDirectedInletVelocityFvPatchVectorField.C
+
+dynamicSolidFvMesh/dynamicSolidFvMesh.C
+solidDisplacementFvMotionSolver/solidDisplacementFvMotionSolver.C
+
+LIB = $(FOAM_USER_LIBBIN)/libDensityBasedSolvers

@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField  uniform 285.15;
+
+boundaryField
+{
+    inletRotor
+    {
+        type            isentropicTotalTemperature;
+        p               p;
+        T0              uniform  288.15;
+        p0              uniform  101300;
+        value           uniform  288.15;
+    }
+    cyclic1
+    {
+        type            cyclicGgi;
+    }
+    cyclic2
+    {
+        type            cyclicGgi;
+    }
+    heat_transfer
+    {
+        type            compressible::turbulentTemperatureCoupledBaffleMixed;
+        value           uniform 288;
+        neighbourFieldName T;
+        K               none;
+    }
+    shroud
+    {
+        type            zeroGradient;
+    }
+    outletRotor_ggi
+    {
+        type            ggi;
+    }
+    cyclicStator1
+    {
+        type            cyclicGgi;
+    }
+    cyclicStator2
+    {
+        type            cyclicGgi;
+    }
+    inletStator_ggi
+    {
+        type            ggi;
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+    wall
+    {
+        type            zeroGradient;
+    }
+}
+// ************************************************************************* //

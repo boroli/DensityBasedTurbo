@@ -1,0 +1,7 @@
+copy the MRF* files to OF/src/finiteVolume/cfdTools/general/MRF/
+
+cp MRF* OF/src/finiteVolume/cfdTools/general/MRF/
+
+and recompile the lib finiteVolume
+
+cd OF/src/finiteVolume; wmake libso

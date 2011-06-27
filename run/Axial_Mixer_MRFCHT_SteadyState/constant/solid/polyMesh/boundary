@@ -1,0 +1,74 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+6
+(
+    welle_front
+    {
+        type            wall;
+        nFaces          30;
+        startFace       1524;
+    }
+    welle_back
+    {
+        type            wall;
+        nFaces          30;
+        startFace       1554;
+    }
+    welle_adiabat
+    {
+        type            wall;
+        nFaces          180;
+        startFace       1584;
+    }
+    blade_ht
+    {
+        type            directMappedWall;
+        nFaces          276;
+        startFace       1764;
+        sampleMode      nearestPatchFace;
+        sampleRegion    region0;
+        samplePatch     heat_transfer;
+        offset          ( 0 0 0 );
+    }
+    cyclic_hub1
+    {
+        type            cyclicGgi;
+        nFaces          54;
+        startFace       2040;
+        shadowPatch     cyclic_hub2;
+        zone            cyclicHub1_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   30;
+        separationOffset (0 0 0);
+    }
+    cyclic_hub2
+    {
+        type            cyclicGgi;
+        nFaces          54;
+        startFace       2094;
+        shadowPatch     cyclic_hub1;
+        zone            cyclicHub2_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   -30;
+        separationOffset (0 0 0);
+    }
+)
+
+// ************************************************************************* //

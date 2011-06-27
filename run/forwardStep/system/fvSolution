@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    rho
+    {
+        solver          diagonal;
+    };
+
+    rhoU
+    {
+        solver          diagonal;
+    };
+
+    rhoE
+    {
+        solver          diagonal;
+    };
+}
+
+multiStage
+{
+    numberSubCycles 50;
+    numberRungeKuttaStages 4;
+    RKCoeff 0.11 0.2766 0.5 1.0;
+}
+
+Riemann
+{
+    secondOrder yes;            // activate 2nd order extensions
+    multidimLimiter yes;        // Switch between 1D and mutliD limiters
+    epsilon "5";                // VK constant
+    limiterName vanAlbadaSlope; // vanAlbadaSlope, MinmodSlope, vanLeerSlope
+}
+
+relaxationFactors
+{
+    // Note: under-relaxation factors used in wave-transmissive schemes
+    k             0.2;
+    omega         0.2;
+}
+
+fieldBounds
+{
+    // With bounding
+    p      1e-6     1e6;
+    rho    1e-6     1e6;
+    h      1e-6     1e6;
+    e      1e-6     1e6;
+    rhoE   1e-6     1e6;
+    T      1e-6    3000;
+    U    1000;
+}
+// ************************************************************************* //

@@ -1,0 +1,4 @@
+tractionDisplacement/tractionDisplacementFvPatchVectorField.C
+transonicMRFFSIDyMFoam.C
+
+EXE = $(FOAM_USER_APPBIN)/transonicMRFFSIDyMFoam

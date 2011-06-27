@@ -1,0 +1,67 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default none;
+    ddt(rho)       backwardDual physDeltaT CoDeltaT;
+    ddt(rhoU)      backwardDual physDeltaT CoDeltaT;
+    ddt(rhoE)      backwardDual physDeltaT CoDeltaT;
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+    grad(rho)       Gauss linear;
+    grad(USlope)    cellMDLimited Gauss linear 1.0;
+    grad(pSlope)    Gauss linear;
+    grad(U)         cellMDLimited Gauss linear 1.0;
+    grad(TSlope)    Gauss linear;
+    snGradCorr(U)   Gauss linear;
+    snGradCorr(h)   Gauss linear;
+    snGradCorr(k)   Gauss linear;
+}
+
+divSchemes
+{
+    default         none;
+    div(tau)     Gauss linear;
+    div((tau&U)) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         none;
+    laplacian(alphaEff,h) Gauss linear corrected;
+    laplacian((mu+(0.6*mut)),k) Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default               none;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+fluxRequired
+{
+    default         no;
+}
+
+// ************************************************************************* //

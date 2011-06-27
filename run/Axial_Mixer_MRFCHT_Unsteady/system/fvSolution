@@ -1,0 +1,92 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    rho
+    {
+        solver          diagonal;
+    }
+
+    rhoU
+    {
+        solver          diagonal;
+    }
+
+    rhoE
+    {
+        solver          diagonal;
+    }
+
+    k
+    {
+        solver          PBiCG;
+        preconditioner  DILU;
+        tolerance       1e-08;
+        relTol          0;
+    }
+
+    omega
+    {
+        solver          PBiCG;
+        preconditioner  DILU;
+        tolerance       1e-08;
+        relTol          0;
+    }
+
+    epsilon
+    {
+        solver          PBiCG;
+        preconditioner  DILU;
+        tolerance       1e-08;
+        relTol          0;
+    }
+}
+
+multiStage
+{
+    numberSubCycles 30;
+    numberRungeKuttaStages 4;
+    RKCoeff 0.11 0.2766 0.5 1.0;
+}
+
+Riemann
+{
+    secondOrder no;
+    multidimLimiter yes;
+    epsilon "2";
+    limiterName vanAlbadaSlope; // vanAlbadaSlope, MinmodSlope, vanLeerSlope
+}
+
+relaxationFactors
+{
+    k               0.2;
+    omega           0.2;
+}
+
+fieldBounds
+{
+    // With bounding
+    p      1e4     1e6;
+    rho    0.1     10;
+    e      1e2     1e7;
+    h      1e4     1e6;
+    rhoE   1e1     3e7;
+    T      10      1000;
+    U      1000;
+}
+
+// ************************************************************************* //

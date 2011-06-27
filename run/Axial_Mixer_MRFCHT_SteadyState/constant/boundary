@@ -1,0 +1,122 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+11
+(
+    inletRotor
+    {
+        type            patch;
+        nFaces          621;
+        startFace       106799;
+    }
+    cyclic1
+    {
+        type            cyclicGgi;
+        nFaces          1380;
+        startFace       107420;
+        shadowPatch     cyclic2;
+        zone            cyclic1_faces;
+        bridgeOverlap   false;
+        rotationAxis    (0 0 1);
+        rotationAngle   -30;
+        separationOffset (0 0 0);
+    }
+    cyclic2
+    {
+        type            cyclicGgi;
+        nFaces          1380;
+        startFace       108800;
+        shadowPatch     cyclic1;
+        zone            cyclic2_faces;
+        bridgeOverlap   false;
+        rotationAxis    (0 0 1);
+        rotationAngle   30;
+        separationOffset (0 0 0);
+    }
+    heat_transfer
+    {
+        type            directMappedWall;
+        nFaces          2540;
+        startFace       110180;
+        sampleMode      nearestPatchFace;
+        sampleRegion    solid;
+        samplePatch     blade_ht;
+        offset          (0 0 0);
+    }
+    shroud
+    {
+        type            wall;
+        nFaces          1620;
+        startFace       112720;
+    }
+    outletRotor_ggi
+    {
+        type            ggi;
+        nFaces          621;
+        startFace       114340;
+        shadowPatch     inletStator_ggi;
+        zone            outletRotor_faces;
+        bridgeOverlap   off;
+    }
+    inletStator_ggi
+    {
+        type            ggi;
+        nFaces          100;
+        startFace       114961;
+        shadowPatch     outletRotor_ggi;
+        zone            inletStator_faces;
+        bridgeOverlap   off;
+    }
+    cyclicStator1
+    {
+        type            cyclicGgi;
+        nFaces          100;
+        startFace       115061;
+        shadowPatch     cyclicStator2;
+        zone            cyclicStator1_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   -30;
+        separationOffset (0 0 0);
+    }
+    cyclicStator2
+    {
+        type            cyclicGgi;
+        nFaces          100;
+        startFace       115161;
+        shadowPatch     cyclicStator1;
+        zone            cyclicStator2_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   30;
+        separationOffset (0 0 0);
+    }
+    outlet
+    {
+        type            patch;
+        nFaces          100;
+        startFace       115261;
+    }
+    wall
+    {
+        type            wall;
+        nFaces          200;
+        startFace       115361;
+    }
+)
+
+// ************************************************************************* //

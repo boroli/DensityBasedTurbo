@@ -1,0 +1,3 @@
+faceSet cyclicHub1_faces new patchToFace cyclic_hub1
+faceSet cyclicHub2_faces new patchToFace cyclic_hub2
+quit

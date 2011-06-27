@@ -1,0 +1,77 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      omega;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   uniform 2250;
+
+boundaryField
+{
+    inlet_0
+    {
+        type            compressible::turbulentMixingLengthFrequencyInlet;
+        mixingLength    0.05;
+        k               k;
+        value           uniform 2250;
+    }
+    outlet_0
+    {
+        type            zeroGradient;
+    }
+    passageSidesUpper_0
+    {
+        type            cyclicGgi;
+        value           uniform 2250;
+    }
+    passageSidesLower_0
+    {
+        type            cyclicGgi;
+        value           uniform 2250;
+    }
+    hub_0
+    {
+        type            compressible::omegaWallFunction;
+        U               URel;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+        value           uniform 2250;
+    }
+    shroud_0
+    {
+        type            compressible::omegaWallFunction;
+        U               URel;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+        value           uniform 2250;
+    }
+    blade_0
+    {
+        type            compressible::omegaWallFunction;
+        U               URel;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+        value           uniform 2250;
+    }
+}
+
+// ************************************************************************* //

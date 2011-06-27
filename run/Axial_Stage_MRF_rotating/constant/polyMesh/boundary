@@ -1,0 +1,138 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+14
+(
+    inlet_0
+    {
+        type            patch;
+        nFaces          320;
+        startFace       119392;
+    }
+    outlet_0
+    {
+        type            overlapGgi;
+        nFaces          320;
+        startFace       119712;
+        rotationAxis    (0 0 1);
+        nCopies         30;
+        shadowPatch     inlet_1;
+        zone            outlet_0_faces;
+    }
+    passageSidesUpper_0
+    {
+        type            cyclicGgi;
+        nFaces          600;
+        startFace       120032;
+        shadowPatch     passageSidesLower_0;
+        zone            passageSidesUpper_0_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   -12;
+        separationOffset (0 0 0);
+    }
+    passageSidesLower_0
+    {
+        type            cyclicGgi;
+        nFaces          600;
+        startFace       120632;
+        shadowPatch     passageSidesUpper_0;
+        zone            passageSidesLower_0_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   12;
+        separationOffset (0 0 0);
+    }
+    hub_0
+    {
+        type            wall;
+        nFaces          2148;
+        startFace       121232;
+    }
+    shroud_0
+    {
+        type            wall;
+        nFaces          2148;
+        startFace       123380;
+    }
+    blade_0
+    {
+        type            wall;
+        nFaces          840;
+        startFace       125528;
+    }
+    inlet_1
+    {
+        type            overlapGgi;
+        nFaces          300;
+        startFace       126368;
+        rotationAxis    (0 0 1);
+        nCopies         30;
+        shadowPatch     outlet_0;
+        zone            inlet_1_faces;
+    }
+    outlet_1
+    {
+        type            patch;
+        nFaces          300;
+        startFace       126668;
+    }
+    passageSidesUpper_1
+    {
+        type            cyclicGgi;
+        nFaces          600;
+        startFace       126968;
+        shadowPatch     passageSidesLower_1;
+        zone            passageSidesUpper_1_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   -12;
+        separationOffset (0 0 0);
+    }
+    passageSidesLower_1
+    {
+        type            cyclicGgi;
+        nFaces          600;
+        startFace       127568;
+        shadowPatch     passageSidesUpper_1;
+        zone            passageSidesLower_1_faces;
+        bridgeOverlap   off;
+        rotationAxis    (0 0 1);
+        rotationAngle   12;
+        separationOffset (0 0 0);
+    }
+    hub_1
+    {
+        type            wall;
+        nFaces          2060;
+        startFace       128168;
+    }
+    shroud_1
+    {
+        type            wall;
+        nFaces          2060;
+        startFace       130228;
+    }
+    blade_1
+    {
+        type            wall;
+        nFaces          800;
+        startFace       132288;
+    }
+)
+
+// ************************************************************************* //

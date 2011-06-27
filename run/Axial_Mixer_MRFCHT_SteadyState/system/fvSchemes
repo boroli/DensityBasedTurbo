@@ -1,0 +1,66 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default        none;
+    ddt(rho)       EulerLocal physDeltaT CoDeltaT;
+    ddt(rhoU)      EulerLocal physDeltaT CoDeltaT;
+    ddt(rhoE)      EulerLocal physDeltaT CoDeltaT;
+    ddt(rho,omega) EulerLocal physDeltaT CoDeltaT;
+    ddt(rho,k)     EulerLocal physDeltaT CoDeltaT;
+}
+
+gradSchemes
+{
+     default         leastSquares;
+}
+
+divSchemes
+{
+    default         none;
+    div(tau)        Gauss linear;
+    div((tau&U))    Gauss linear;
+    div(phi,omega)  Gauss upwind;
+    div(phi,k)      Gauss upwind;
+}
+
+laplacianSchemes
+{
+    default                    Gauss linear corrected;
+    laplacian(alphaEff,e)      Gauss linear corrected;
+    laplacian(alphaEff,h)      Gauss linear corrected;
+    laplacian(DomegaEff,omega) Gauss linear corrected;
+    laplacian(DkEff,k)         Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default               none;
+    interpolate(rho)      linear corrected;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+fluxRequired
+{
+    default         no;
+}
+
+// ************************************************************************* //

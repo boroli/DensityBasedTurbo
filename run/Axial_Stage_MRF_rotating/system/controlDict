@@ -1,0 +1,123 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.007371282418877325; // = x * deltaT
+
+deltaT          7.0606153437522272e-06; // = 2*\pi/(N360*omega) with N360 = nPassages*nTimeStepsPerPassage = 30*34 = 1044 number of time steps of each revolution, and omega = 852.387
+// = 60.0/(N360*RPM) with RPM as revolutions per minute
+
+writeControl    timeStep;
+
+writeInterval   4;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression uncompressed;
+
+timeFormat      general;
+
+timePrecision   6;
+
+graphFormat     raw;
+
+runTimeModifiable yes;
+
+// Switch for global time stepping, with global minimum localTS
+adjustTimeStep  no;
+
+// maximimun CFL number for localTS
+maxCo           1.3;
+
+// maxDeltaT - currently not used in Density-Based solvers
+maxDeltaT       1;
+
+// ************************************************************************* //
+libs ( "libDensityBasedSolvers.so" );
+
+functions
+(
+   inletMassFlow
+   {
+     type patchMassFlow;
+     functionObjectLibs
+     (
+         "libsimpleFunctionObjects.so"
+     );
+     verbose true;
+     patches
+     (
+         inlet_0
+     );
+     factor -30.0;
+   }
+   outletMassFlow
+   {
+     type patchMassFlow;
+     functionObjectLibs
+     (
+         "libsimpleFunctionObjects.so"
+     );
+     verbose true;
+     patches
+     (
+         outlet_1
+     );
+     factor 30.0;
+   }
+   areaAverage
+   {
+     type patchAverage;
+     functionObjectLibs
+     (
+         "libsimpleFunctionObjects.so"
+     );
+     verbose true;
+     fields ( p rho U T );
+     patches
+     (
+         outlet_1
+         inlet_0
+     );
+     factor 1;
+   }
+//    massflowAverage
+//    {
+//      type patchMassFlowAverage;
+//      functionObjectLibs
+//      (
+//          "libsimpleFunctionObjects.so"
+//      );
+//      verbose true;
+//      fields ( p U T );
+//      patches
+//      (
+//          outlet_0
+//          inlet_0
+//      );
+//      factor 1;
+//    }
+);
+

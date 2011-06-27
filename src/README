@@ -1,0 +1,49 @@
+
+In order to compile, run and use this set of additional solvers and libraries
+you should be familiar with:
+
+	- OpenFOAM (RTFM, Forum, Wiki, etc.)
+	- git (RTFM)
+
+Just in case something is not running out of the box and you'll need to fix it
+at your own. In order to compile and run the libraries and solvers, you'll need
+the OpenFOAM-1.6-ext version from the openfoam-extend.sf.net git. The sources
+are distributed under the GNU GPL v2 or later. Especially the following
+paragraph maybe important for further distributors:
+
+§ 6. ... You may not impose any further restrictions on the recipients'
+exercise of the rights granted herein. ...
+
+In order to compile the solvers you have to use the latest MRF files, have a
+look at:
+
+	timeStepping/MRF/readme
+
+For the CHT and FSI solvers you'll need the fix from the git branch:
+
+	hotfix/multiRegion_dynamicFvMesh
+
+Additional care has to be taken for the chosen Riemann solver and
+multidimensional limiter. These are NOT YET runtime selectable! In order to
+chose another Riemann solver, chose it in the createFields.H file and recompile
+the top level solver. In order to switch between the Barth-Jespersen (BJ) and
+Venkatakrishnan (VK) multidimensional limiter, chose it in the godunovFlux.C
+file and recompile the top level solver (yes the top level solver as the
+godunovFlux.C is a template).
+
+If you think you found a bug or have any improvements, please use the public
+Mantis bug tracker (DON'T contact me by private email - I have just not the
+time to give you an individual support!) at
+
+	http://sourceforge.net/apps/mantisbt/openfoam-extend/my_view_page.php
+
+As the solvers are still in development, additional API changes are possible.
+This might prevent to run some or all tutorials out of the box. Please feel
+free to fix this at or own. If you have additonal improvements and write access
+to the git (as an openfoam-extend developer), feel free to create a new feature
+branch, according to the openfoam-extend rules, and push this to the git repo.
+
+Many thanks to Aleks and Steffen for their support and patience!
+
+Oliver Borm
+

@@ -1,0 +1,7 @@
+faceSet passageSidesUpper_0_faces new patchToFace passageSidesUpper_0
+faceSet passageSidesLower_0_faces new patchToFace passageSidesLower_0
+faceSet passageSidesUpper_1_faces new patchToFace passageSidesUpper_1
+faceSet passageSidesLower_1_faces new patchToFace passageSidesLower_1
+faceSet outlet_0_faces new patchToFace outlet_0
+faceSet inlet_1_faces new patchToFace inlet_1
+quit

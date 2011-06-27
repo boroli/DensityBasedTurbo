@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform 280.0;
+
+boundaryField
+{
+    inlet_0
+    {
+        type      isentropicTotalTemperature;
+        p         p;              // name of static pressure field
+        T0        uniform 293.0;  // absolute total temperature field
+        p0        uniform 101325; // absolute total presure field
+        value     uniform 280;    // initial value
+    }
+
+    outlet_0
+    {
+        type            zeroGradient;
+    }
+
+    passageSidesUpper_0
+    {
+        type            cyclicGgi;
+    }
+
+    passageSidesLower_0
+    {
+        type            cyclicGgi;
+    }
+
+    hub_0
+    {
+        type            zeroGradient;
+    }
+
+    shroud_0
+    {
+        type            zeroGradient;
+    }
+
+    blade_0
+    {
+        type            zeroGradient;
+    }
+}
+
+// ************************************************************************* //

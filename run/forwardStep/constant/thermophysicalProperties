@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType      hPsiThermo<pureMixture<constTransport<specieThermo<hConstThermo<perfectGas>>>>>;
+
+// name, nMoles, mol weight, CP, Hf, mu, Pr;
+// mixture         air 1 28.9 1007 0 0 0.7;
+mixture         normalisedGas 1 11640.3 2.5 0.0 0.0 1.0;
+
+// Cv              Cv [0 2 -2 -1 0 0 0] 1.78571;
+//
+// R               R [0 2 -2 -1 0 0 0] 0.714286;
+
+// R = p/(rho*T) mit T = 1; p = 1; rho = 1.4 => R = 1/1.4 = 0.714286
+// cp = kappa * R / (kappa -1) = cv + R = 2.5
+
+// Cv              Cv [0 2 -2 -1 0 0 0] 1.78571;
+//
+// R               R [0 2 -2 -1 0 0 0] 0.714286;
+
+// ************************************************************************* //

@@ -1,0 +1,24 @@
+Residuals
+{
+  expr "rho residual: (%f%)";
+  name Residuals;
+  theTitle "Residuals";
+  titles ( "Averaged L2 Rho  Residual" );
+  type regular;
+}
+
+AddRhoUToResiduals
+{
+  expr "rhoU residual: (%f%)";
+  titles ( "Averaged L2 RhoU Residual" );
+  type slave;
+  master Residuals;
+}
+
+AddRhoEToResiduals
+{
+  expr "rhoE residual: (%f%)";
+  titles ( "Averaged L2 RhoE Residual" );
+  type slave;
+  master Residuals;
+}

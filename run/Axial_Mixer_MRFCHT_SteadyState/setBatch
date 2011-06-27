@@ -1,0 +1,7 @@
+faceSet cyclic1_faces new patchToFace cyclic1
+faceSet cyclic2_faces new patchToFace cyclic2
+faceSet inletStator_faces new patchToFace inletStator_ggi
+faceSet outletRotor_faces new patchToFace outletRotor_ggi
+faceSet cyclicStator1_faces new patchToFace cyclicStator1
+faceSet cyclicStator2_faces new patchToFace cyclicStator2
+quit

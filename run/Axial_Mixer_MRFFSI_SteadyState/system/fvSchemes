@@ -1,0 +1,84 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+//     default        Euler;
+    default        none;
+//     ddt(rho)       backwardDual physDeltaT CoDeltaT;
+//     ddt(rhoU)      backwardDual physDeltaT CoDeltaT;
+//     ddt(rhoE)      backwardDual physDeltaT CoDeltaT;
+//     ddt(rho,omega)      backwardDual physDeltaT CoDeltaT;
+//     ddt(rho,k)          backwardDual physDeltaT CoDeltaT;
+
+    ddt(rho)       EulerLocal physDeltaT CoDeltaT;
+    ddt(rhoU)      EulerLocal physDeltaT CoDeltaT;
+    ddt(rhoE)      EulerLocal physDeltaT CoDeltaT;
+    ddt(rho,omega) EulerLocal physDeltaT CoDeltaT;
+    ddt(rho,k)     EulerLocal physDeltaT CoDeltaT;
+}
+
+gradSchemes
+{
+//     default         none;
+//     default         Gauss linear;
+     default         leastSquares;
+//     grad(rho)       leastSquares;
+//     grad(p)         leastSquares;
+//     grad(U)         leastSquares;
+//     grad(T)         leastSquares;
+//     snGradCorr(omega)   leastSquares;
+//     snGradCorr(k)   leastSquares;
+//    grad(omega)     Gauss upwind phi;
+//    grad(k)         Gauss upwind phi;
+}
+
+divSchemes
+{
+    default         none;
+    div(tau)        Gauss linear;
+    div((tau&U))    Gauss linear;
+    div(phi,omega)  Gauss upwind;
+    div(phi,k)      Gauss upwind;
+}
+
+laplacianSchemes
+{
+    default                    Gauss linear corrected;
+    laplacian(alphaEff,e)      Gauss linear corrected;
+    laplacian(alphaEff,h)      Gauss linear corrected;
+    laplacian(DomegaEff,omega) Gauss linear corrected;
+    laplacian(DkEff,k)         Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default               none;
+    interpolate(rho)      linear corrected;
+}
+
+snGradSchemes
+{
+    default         corrected;
+    //default         limited 0.5;
+}
+
+fluxRequired
+{
+    default         no;
+}
+
+// ************************************************************************* //

@@ -1,0 +1,6 @@
+
+The dynamicSolidFvMesh and solidDisplacementFvMotionSolver are in an early
+experimental development stage. These are thought to be used a meshMotion
+solver in combination with the FSI solver, but development is stalled at the
+moment.
+

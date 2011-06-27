@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Source tutorial clean functions
+. $WM_PROJECT_DIR/bin/tools/CleanFunctions
+
+cleanCase
+
+rm -rf constant/solid/polyMesh/allOwner* \
+       constant/solid/polyMesh/cell* \
+       constant/solid/polyMesh/face* \
+       constant/solid/polyMesh/meshModifiers* \
+       constant/solid/polyMesh/owner* \
+       constant/solid/polyMesh/neighbour* \
+       constant/solid/polyMesh/point* \
+       constant/solid/polyMesh/edge* \
+       constant/solid/polyMesh/zoneToPatchName \
+       constant/solid/polyMesh/cellLevel* \
+       constant/solid/polyMesh/pointLevel* \
+       constant/solid/polyMesh/refinementHistory*, \
+       constant/solid/polyMesh/surfaceIndex* \
+       constant/solid/cellToRegion \
+       constant/solid/polyMesh/sets/ \
+       > /dev/null 2>&1
+
+rm -rf 0
+
+find -iname "*~" | xargs rm -rf

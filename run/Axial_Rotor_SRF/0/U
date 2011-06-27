@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 -50.0 170.0);
+
+boundaryField
+{
+    inlet_0
+    {
+        type temperatureDirectedInletVelocity;
+        inletDirection  uniform (0 0 1);             // Direction of absolute velocity in cartesian coordinates
+        phi             phi;                         // just needed in compressible case to check dimensions
+        T               T;                           // name of the static temperature field
+        T0              uniform 293.0;               // value of the total temperature
+        cylindricalCS   no;                          // specifies if inletDirection is in cartesian or cylindrical coordinates
+        omega           (0 0 852.387);               // Angular Frequency
+        value           uniform (0 0 210);           // Initial Value
+    }
+
+    outlet_0
+    {
+        type            zeroGradient;
+    }
+
+    passageSidesUpper_0
+    {
+        type            cyclicGgi;
+    }
+
+    passageSidesLower_0
+    {
+        type            cyclicGgi;
+    }
+
+    hub_0
+    {
+        type            fixedValue;
+        value           uniform ( 0.0 0.0 0.0 );
+    }
+
+    shroud_0
+    {
+        type            fixedValue;
+        value           uniform ( 0.0 0.0 0.0 );
+    }
+
+    blade_0
+    {
+        type            fixedValue;
+        value           uniform ( 0.0 0.0 0.0 );
+    }
+}
+
+// ************************************************************************* //
