@@ -38,11 +38,6 @@
         mesh
     );
 
-
-    Info<< "Create Riemann solver\n" << endl;
-    godunovFlux<hllcFlux> Godunov(p, U, T, thermo);
-//     godunovFlux<roeFlux> Godunov(p, U, T, thermo;
-
 #   include "compressibleCreatePhi.H"
 
     Info<< "Creating turbulence model\n" << endl;
@@ -56,6 +51,12 @@
             thermo
         )
     );
+
+    Info<< "Create Riemann solver\n" << endl;
+    godunovFlux<hllcALEFlux> Godunov(p, U, T, thermo, turbulence());
+//     godunovFlux<AUSMplusALEFlux> Godunov(p, U, T, thermo, turbulence());
+//     godunovFlux<roeALEFlux> Godunov(p, U, T, thermo, turbulence());
+//     godunovFlux<rusanovALEFlux> Godunov(p, U, T, thermo, turbulence());   
 
     volVectorField rhoU
     (

@@ -35,13 +35,14 @@ Author
 
 #include "fvCFD.H"
 #include "basicPsiThermo.H"
+#include "RASModel.H"
 #include "turbulenceModel.H"
 
 #include "SRFModel.H"
 
 #include "godunovFlux.H"
-#include "hllcFlux/hllcFlux.H"
-#include "roeFlux/roeFlux.H"
+//#include "hllcFlux/hllcFlux.H"	// already called in godunovFlux.H
+//#include "roeFlux/roeFlux.H"		// already called in godunovFlux.H
 
 #include "localTimeStep.H"
 
@@ -257,6 +258,7 @@ int main(int argc, char *argv[])
         turbulence->correct();
 
         runTime.write();
+
 
         Info<< "\n    ExecutionTime = "
             << runTime.elapsedCpuTime()
