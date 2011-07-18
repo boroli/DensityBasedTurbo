@@ -492,7 +492,9 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             cellVolume.internalField() = mesh().V();
             cellVolume.correctBoundaryConditions();
 
-            // compute for each face a limiter
+            // compute for each cell a limiter
+            // Loop over all faces, which very inefficent, as the limiter is
+            // computed several times!
             forAll(owner, faceI)
             {
                 label own = owner[faceI];

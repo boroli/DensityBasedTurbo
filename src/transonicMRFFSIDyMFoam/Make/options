@@ -3,7 +3,7 @@ EXE_INC = \
     -I../timeStepping \
     -I../timeStepping/localTimeStep \
     -I../transonicMRFDyMFoam \
-    -I../transonicMRFChtDyMFoam \
+    -I../transonicMRFCHTDyMFoam \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
