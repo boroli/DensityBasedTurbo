@@ -493,8 +493,7 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             cellVolume.correctBoundaryConditions();
 
             // compute for each cell a limiter
-            // Loop over all faces, which very inefficent, as the limiter is
-            // computed several times!
+            // Loop over all faces with different deltaR vector
             forAll(owner, faceI)
             {
                 label own = owner[faceI];
