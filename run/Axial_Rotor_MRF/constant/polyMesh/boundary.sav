@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+7
+(
+    inlet_0
+    {
+        type            patch;
+        nFaces          1344;
+        startFace       463054;
+    }
+    outlet_0
+    {
+        type            patch;
+        nFaces          1344;
+        startFace       464398;
+    }
+    passageSidesUpper_0
+    {
+        type            cyclicGgi;
+        nFaces          4578;
+        startFace       465742;
+        shadowPatch     passageSidesLower_0;
+        zone            passageSidesUpper_0_faces;
+        bridgeOverlap   false;
+        rotationAxis    (0 0 1);
+        rotationAngle   -15.652173913043478;
+        separationOffset (0 0 0);
+    }
+    passageSidesLower_0
+    {
+        type            cyclicGgi;
+        nFaces          4578;
+        startFace       470320;
+        shadowPatch     passageSidesUpper_0;
+        zone            passageSidesLower_0_faces;
+        bridgeOverlap   false;
+        rotationAxis    (0 0 1);
+        rotationAngle   15.652173913043478;
+        separationOffset (0 0 0);
+    }
+    hub_0
+    {
+        type            wall;
+        nFaces          3776;
+        startFace       474898;
+    }
+    shroud_0
+    {
+        type            wall;
+        nFaces          3776;
+        startFace       478674;
+    }
+    blade_0
+    {
+        type            wall;
+        nFaces          6048;
+        startFace       482450;
+    }
+)
+
+// ************************************************************************* //

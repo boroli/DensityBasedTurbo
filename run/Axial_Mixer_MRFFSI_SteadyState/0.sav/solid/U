@@ -1,0 +1,57 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 0 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    welle_front
+    {
+        type            slip;
+//         value           uniform (0 0 0);
+    }
+    welle_back
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    welle_adiabat
+    {
+        type            zeroGradient;
+    }
+    blade_ht
+    {
+        type            tractionDisplacement;
+        traction        uniform (0 0 0);
+        pressure        uniform 0;
+        value           uniform (0 0 0);
+        neighbourFieldName p;
+    }
+    cyclic_hub1
+    {
+        type            cyclicGgi;
+        value           uniform (0 0 0);
+    }
+    cyclic_hub2
+    {
+        type            cyclicGgi;
+        value           uniform (0 0 0);
+    }
+}
+
+// ************************************************************************* //

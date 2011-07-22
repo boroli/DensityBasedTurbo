@@ -15,7 +15,7 @@ cp -r constant/solid/boundary constant/solid/polyMesh
 cp -r constant/boundary constant/polyMesh
 
 cp -r ../CHT_SteadyState/10000 0
-cp 0.orig/motionU 0/
-cp 0.orig/solid/U 0/solid/
+cp 0.sav/motionU 0/
+cp 0.sav/solid/U 0/solid/
 
 runApplication transonicMRFFsiDyMFoam

@@ -1,0 +1,90 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      mut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [1 -1 -1 0 0 0 0];
+
+internalField   uniform 1;
+
+boundaryField
+{
+
+    inletRotor
+    {
+        type            calculated;
+        value           uniform 1;
+    }
+    cyclic1
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    cyclic2
+    {
+        type             cyclicGgi;
+        value            uniform 1;
+    }
+    heat_transfer
+    {
+        type            mutWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        value           uniform 0;
+    }
+    shroud
+    {
+        type            mutWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        value           uniform 0;
+    }
+
+    cyclicStator1
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    cyclicStator2
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    outletRotor_ggi
+    {
+        type            ggi;
+    }
+    inletStator_ggi
+    {
+        type            ggi;
+    }
+    outlet
+    {
+        type            calculated;
+        value           uniform 1;
+    }
+    wall
+    {
+        type            mutWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        value           uniform 0;
+    }
+}
+
+// ************************************************************************* //

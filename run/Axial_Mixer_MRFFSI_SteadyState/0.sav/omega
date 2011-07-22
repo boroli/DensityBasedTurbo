@@ -1,0 +1,90 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      binary;
+    class       volScalarField;
+    location    "0";
+    object      omega;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   uniform 11249.8;
+
+boundaryField
+{
+    inletRotor
+    {
+        type            compressible::turbulentMixingLengthFrequencyInlet;
+        mixingLength    0.0005;
+        k               k;
+        value           uniform 12500;
+    }
+    cyclic1
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    cyclic2
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    heat_transfer
+    {
+        type            compressible::omegaWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+    }
+    shroud
+    {
+        type            compressible::omegaWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+    }
+    cyclicStator1
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    cyclicStator2
+    {
+        type            cyclicGgi;
+        value           uniform 1;
+    }
+    outletRotor_ggi
+    {
+        type            ggi;
+    }
+    inletStator_ggi
+    {
+        type            ggi;
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+    wall
+    {
+        type            compressible::omegaWallFunction;
+        Cmu             0.09;
+        kappa           0.41;
+        E               9.8;
+        beta1           0.075;
+    }
+}
+
+// ************************************************************************* //
+
