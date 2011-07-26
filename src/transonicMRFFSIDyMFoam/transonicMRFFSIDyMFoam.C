@@ -44,7 +44,6 @@ Author
 
 #include "fvCFD.H"
 #include "basicPsiThermo.H"
-#include "RASModel.H"
 #include "turbulenceModel.H"
 
 #include "MRFZones.H"

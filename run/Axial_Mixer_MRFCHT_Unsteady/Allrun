@@ -17,7 +17,7 @@ cp -r constant/solid/boundary constant/solid/polyMesh
 cp -r constant/boundary constant/polyMesh
 
 cp -r 0.sav 0
-runApplication mapFields ../CHT_SteadyState -sourceTime 10000
+runApplication mapFields ../Axial_Mixer_MRFCHT_SteadyState -sourceTime 10000
 
 runApplication decomposePar
 runApplication -llog.decomposeParSolid decomposePar -region solid

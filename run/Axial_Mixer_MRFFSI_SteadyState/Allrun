@@ -14,8 +14,8 @@ runApplication -llog.setsToZonesSolid setsToZones -noFlipMap -region solid
 cp -r constant/solid/boundary constant/solid/polyMesh
 cp -r constant/boundary constant/polyMesh
 
-cp -r ../CHT_SteadyState/10000 0
+cp -r ../Axial_Mixer_MRFCHT_SteadyState/10000 0
 cp 0.sav/motionU 0/
 cp 0.sav/solid/U 0/solid/
 
-runApplication transonicMRFFsiDyMFoam
+runApplication transonicMRFFSIDyMFoam

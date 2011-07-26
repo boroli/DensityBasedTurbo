@@ -35,15 +35,10 @@ Author
 
 #include "fvCFD.H"
 #include "basicPsiThermo.H"
-#include "RASModel.H"
 #include "turbulenceModel.H"
 
 #include "SRFModel.H"
-
 #include "godunovFlux.H"
-//#include "hllcFlux/hllcFlux.H"	// already called in godunovFlux.H
-//#include "roeFlux/roeFlux.H"		// already called in godunovFlux.H
-
 #include "localTimeStep.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
