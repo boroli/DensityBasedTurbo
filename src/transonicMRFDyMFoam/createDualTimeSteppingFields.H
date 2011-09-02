@@ -32,9 +32,6 @@
                 IOobject::NO_WRITE
             )
         );
-//         const dictionary& turbulenceCoeffDict = turbulence->coeffDict();
-
-// 	Info << turbulenceCoeffDict.toc() << endl;
 
         if(turbulenceCoeffDict.found("turbulentFields"))
         {

@@ -1,5 +1,4 @@
 {
-
         // update the boundary absolute velocity
         mrfZones.correctBoundaryVelocity(U);
 
@@ -13,20 +12,23 @@
         physDeltaT[1] = subCycleTimeState.deltaT().value();
         physDeltaT[2] = subCycleTimeState.deltaT0().value();
 
-
         // Begin sub-cycling - PseudoTime Integration
+        // adjustTimeStep and numberSubCycles > 1 does not make any sense
         for (label j=0; j < numberSubCycles; j++)
         {
             // Update subCycle Time
             runTime++;
 
+            // update local time step sizes just once each iteration for
+            // all ddt schemes
+            if (!adjustTimeStep)
+            {
+                localTimeStep.update(maxCo,adjustTimeStep);
+            }
+
             // Plot Pseudo Time here, so that one can analyse the residuls with
             // pyFoam*
             Info<< "\n Time = " << runTime.value() << nl << endl;
-
-            // update local time step sizes just once each iteration for
-            // all ddt schemes
-            localTimeStep.update(maxCo,adjustTimeStep);
 
             // Begin outer Loop for Runge - Kutta
             forAll (beta,i)
@@ -42,10 +44,6 @@
 
                 // get access to multi-stage coefficient in ddt scheme
                 physDeltaT[0] = beta[i];
-
-//                 // update local time step sizes just once each iteration for
-//                 // all ddt schemes
-//                 localTimeStep.update(maxCo,adjustTimeStep);
 
                 // \f$ \mu \left( \nabla \vec{U} + \left( \nabla \vec{U}
                 // \right)^T - \frac{2}{nD} \left( \nabla \bullet \vec{U}
@@ -87,7 +85,11 @@
                     ;
 
                 // Add source terms to the numerical fluxes due to the rotation
-                mrfZones.addCoriolis(rho,U,rhoUFlux);
+                // Is not needed if mesh is really rotating, as this effect is
+                // captured then by the time stepping of the velocity field. As
+                // the vector is not adapted, when the mesh is rotating.
+                mesh.type() == "staticFvMesh" ?
+                    mrfZones.addCoriolis(rho,U,rhoUFlux) : void();
 
                 // Pseudo time integration
                 solve

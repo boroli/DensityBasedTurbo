@@ -83,6 +83,20 @@ int main(int argc, char *argv[])
 #       include "readMultiStage.H"
 #       include "readFieldBounds.H"
 
+        if (adjustTimeStep)
+        {
+            localTimeStep.update(maxCo,adjustTimeStep);
+            runTime.setDeltaT
+            (
+                min
+                (
+                    min(localTimeStep.CoDeltaT()).value(),
+                    maxDeltaT
+                )
+            );
+            numberSubCycles = 1;
+        }
+
         runTime++;
 
         // rotate the mesh about the axis
