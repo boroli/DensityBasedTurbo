@@ -1,0 +1,8 @@
+#!/bin/sh
+
+wclean godunovFlux
+wclean timeStepping
+wclean transonicMRFDyMFoam
+wclean transonicMRFCHTDyMFoam
+wclean transonicMRFFSIDyMFoam
+wclean transonicSteadySRFFoam

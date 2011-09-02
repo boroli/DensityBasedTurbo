@@ -47,7 +47,7 @@ runTimeModifiable yes;
 // Switch for global time stepping, with global minimum localTS
 adjustTimeStep  no;
 
-// maximimun CFL number for localTS
+// maximum CFL number for localTS
 maxCo           0.3;
 
 // maxDeltaT - currently not used in Density-Based solvers

@@ -315,7 +315,6 @@ void localTimeStep::update(scalar maxCo, Switch adjustTimeStep)
     {
         CoDeltaT_ = min(CoDeltaT_);
     }
-
 }
 
 void localTimeStep::update(scalar maxCo)

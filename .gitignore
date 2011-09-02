@@ -73,4 +73,9 @@ doc/[Dd]oxygen/man
 # ignore .tags in the main directory
 /.tags
 
+# pyFoam files - anywhere
+PlyParser_FoamStringParser_parsetab.py
+patchAverage_*
+patchMassFlows_*
+
 # end-of-file
