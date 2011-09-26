@@ -462,17 +462,9 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
                 }
             }
 
-            // Not sure if this is really needed
-            pMinValue.correctBoundaryConditions();
-            UMinValue.correctBoundaryConditions();
-//             TMinValue.correctBoundaryConditions();
-            rhoMinValue.correctBoundaryConditions();
-            kMinValue.correctBoundaryConditions();
-            pMaxValue.correctBoundaryConditions();
-            UMaxValue.correctBoundaryConditions();
-//             TMaxValue.correctBoundaryConditions();
-            rhoMaxValue.correctBoundaryConditions();
-            kMaxValue.correctBoundaryConditions();
+	    //An update of the boundary conditions for
+	    //the min max values is not needed
+	    //according to Hrv
 
             volScalarField cellVolume
             (
@@ -861,12 +853,10 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
         }
     }
 
-    // Not sure if this is really needed
-    pLimiter.correctBoundaryConditions();
-    ULimiter.correctBoundaryConditions();
-//     TLimiter.correctBoundaryConditions();
-    rhoLimiter.correctBoundaryConditions();
-    kLimiter.correctBoundaryConditions();
+    //An update of the boundary conditions for
+    //the limiter values is not needed
+    //according to Hrv
+
 
 //     boundMinMax(pLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
 //     boundMinMax(ULimiter[0],dimensionedScalar(0.0),dimensionedScalar(1.0));
@@ -912,20 +902,20 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             p_[own] + secondOrder*pLimiter[own]*(gradp_[own] & deltaRLeft), // reconstructed left p
             p_[nei] + secondOrder*pLimiter[nei]*(gradp_[nei] & deltaRRight),// reconstructed right p
 //
-//             U_[own] + pLimiter[own] * (gradU_[own] & deltaRLeft), // reconstructed left U
-//             U_[nei] + pLimiter[nei] * (gradU_[nei] & deltaRRight),// reconstructed right U
+//             U_[own] + pLimiter[own] * (deltaRLeft & gradU_[own]), // reconstructed left U
+//             U_[nei] + pLimiter[nei] * (deltaRRight & gradU_[nei]),// reconstructed right U
 //             T_[own] + pLimiter[own] * (gradT_[own] & deltaRLeft), // reconstructed left T
 //             T_[nei] + pLimiter[nei] * (gradT_[nei] & deltaRRight),// reconstructed right T
 //
-            U_[own] + secondOrder*cmptMultiply(ULimiter[own],(gradU_[own] & deltaRLeft)), // reconstructed left U
-            U_[nei] + secondOrder*cmptMultiply(ULimiter[nei],(gradU_[nei] & deltaRRight)),// reconstructed right U
+            U_[own] + secondOrder*cmptMultiply(ULimiter[own],(deltaRLeft & gradU_[own])), // reconstructed left U
+            U_[nei] + secondOrder*cmptMultiply(ULimiter[nei],(deltaRRight & gradU_[nei])),// reconstructed right U
 //
 //          using minimum component scalar limiter
-//             U_[own] + secondOrder*cmptMin(ULimiter[own])*(gradU_[own] & deltaRLeft), // reconstructed left U
-//             U_[nei] + secondOrder*cmptMin(ULimiter[nei])*(gradU_[nei] & deltaRRight),// reconstructed right U
+//             U_[own] + secondOrder*cmptMin(ULimiter[own])*(deltaRLeft & gradU_[own]), // reconstructed left U
+//             U_[nei] + secondOrder*cmptMin(ULimiter[nei])*(deltaRRight & gradU_[nei]),// reconstructed right U
 //
-//             U_[own] + secondOrder*ULimiter[own]*(gradU_[own] & deltaRLeft), // reconstructed left U
-//             U_[nei] + secondOrder*ULimiter[nei]*(gradU_[nei] & deltaRRight),// reconstructed right U
+//             U_[own] + secondOrder*ULimiter[own]*(deltaRLeft & gradU_[own]), // reconstructed left U
+//             U_[nei] + secondOrder*ULimiter[nei]*(deltaRRight & gradU_[nei]),// reconstructed right U
 //
 //             max(T_[own] + secondOrder*TLimiter[own]*(gradT_[own] & deltaRLeft),TMin.value()), // reconstructed left T
 //             max(T_[nei] + secondOrder*TLimiter[nei]*(gradT_[nei] & deltaRRight),TMin.value()),// reconstructed right T
@@ -1093,14 +1083,14 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
                     ppLeft[facei]  + secondOrder*ppLimiterLeft[facei]*(pGradpLeft[facei] & deltaRLeft),                  // face p
                     ppRight[facei] + secondOrder*ppLimiterRight[facei]*(pGradpRight[facei] & deltaRRight),               // face p
 // //
-                    pULeft[facei]  + secondOrder*cmptMultiply(pULimiterLeft[facei],(pGradULeft[facei] & deltaRLeft)),    // face U
-                    pURight[facei] + secondOrder*cmptMultiply(pULimiterRight[facei],(pGradURight[facei] & deltaRRight)), // face U
+                    pULeft[facei]  + secondOrder*cmptMultiply(pULimiterLeft[facei],(deltaRLeft & pGradULeft[facei])),    // face U
+                    pURight[facei] + secondOrder*cmptMultiply(pULimiterRight[facei],(deltaRRight & pGradURight[facei])), // face U
 // //
-//                     pULeft[facei]  + secondOrder*cmptMin(pULimiterLeft[facei])*(pGradULeft[facei] & deltaRLeft),    // face U
-//                     pURight[facei] + secondOrder*cmptMin(pULimiterRight[facei])*(pGradURight[facei] & deltaRRight), // face U
+//                     pULeft[facei]  + secondOrder*cmptMin(pULimiterLeft[facei])*(deltaRLeft & pGradULeft[facei]),    // face U
+//                     pURight[facei] + secondOrder*cmptMin(pULimiterRight[facei])*(deltaRRight & pGradURight[facei]), // face U
 // //
-//                     max(pTLeft[facei]  + secondOrder*pTLimiterLeft[facei]*(pGradTLeft[facei] & deltaRLeft),TMin.value()),                 // face T
-//                     max(pTRight[facei] + secondOrder*pTLimiterRight[facei]*(pGradTRight[facei] & deltaRRight),TMin.value()),               // face T
+//                     max(pTLeft[facei]  + secondOrder*pTLimiterLeft[facei]*(pGradTLeft[facei] & deltaRLeft),TMin.value()),    // face T
+//                     max(pTRight[facei] + secondOrder*pTLimiterRight[facei]*(pGradTRight[facei] & deltaRRight),TMin.value()), // face T
 //
 //                     pTLeft[facei]  + secondOrder*pTLimiterLeft[facei] *(pGradTLeft[facei]  & deltaRLeft),                 // face T
 //                     pTRight[facei] + secondOrder*pTLimiterRight[facei]*(pGradTRight[facei] & deltaRRight),               // face T

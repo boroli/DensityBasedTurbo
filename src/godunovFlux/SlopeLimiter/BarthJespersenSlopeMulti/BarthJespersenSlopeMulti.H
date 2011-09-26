@@ -98,7 +98,7 @@ public:
         const vector& d
     )
     {
-        vector deltaTwo = gradPhiP & d;
+        vector deltaTwo = d & gradPhiP;
         return vector
         (
             limiter(cellVolume,deltaOneMax[0],deltaOneMin[0],deltaTwo[0]),
