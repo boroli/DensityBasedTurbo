@@ -1,0 +1,16 @@
+
+Two different ways for calculating the local time-step are available:
+
+localTimeStep-minDeltaX.C uses the approach to calculate the maximum local time-step based on the minimum
+distance of the cell center to a face center in each cell.
+
+localTimeStep-DeltaCoeffs.C makes use of OpenFOAM's deltaCoefficients. Here the time-step is based on the
+distance of the owner and neighbour cell centers.
+This approach might me more efficient than the minDeltaX-approach, because the deltaCoefficients are already
+available and don't have to be re-evaluated in each iteration for moving meshes.
+
+The first approach has been sucessfully tested for a wide band of applications.
+For the latter some additional testings have to be performed. The viscous time-step has been dropped here.
+
+To choose one of schemes, the contents of the .C and .H files have to be copied into the localTimeStep.C and
+localTimeStep.H. Then the timeStepping library has to be recompiled.
