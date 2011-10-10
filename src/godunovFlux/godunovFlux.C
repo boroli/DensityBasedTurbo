@@ -119,7 +119,9 @@ Foam::godunovFlux<Flux>::godunovFlux
     gradp_(fvc::grad(p_,"grad(pSlope)")),
     gradU_(fvc::grad(U_,"grad(USlope)")),
     gradT_(fvc::grad(T_,"grad(TSlope)")),
-    gradk_(fvc::grad(turbulenceModel_.k(),"grad(TKE)"))
+    gradk_(fvc::grad(turbulenceModel_.k(),"grad(TKE)")),
+    epsilon("5"),
+    Konstant(0.05)
 {}
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
@@ -183,11 +185,6 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
     // RTS 1D Limiters
     word limiterName("vanAlbadaSlope");
 
-    // epsilon for the VK limiter
-    word epsilon("5");
-    // constant for Roe Entropy fix
-    scalar Konstant = 0.05;
-
     // read riemann solver coeffs
     if(mesh_.solutionDict().found("Riemann"))
     {
@@ -205,7 +202,7 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
         {
             epsilon = word(riemann.lookup("epsilon"));
         }
-        Konstant = riemann.lookupOrDefault("RoeKonstant",Konstant);
+        Konstant = riemann.lookupOrDefault("RiemannSolverKonstant",Konstant);
     }
 
     // 2nd order correction

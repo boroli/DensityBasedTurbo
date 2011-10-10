@@ -141,6 +141,15 @@ class godunovFlux
             //- turbulent kinetic energy
             volVectorField gradk_;
 
+	// Parameters
+	    
+           //- run-time-selectable parameter for the VK limiter
+	   word epsilon;
+	   // run-time-selectable parameter for the Riemann-Solvers:
+	   // Roe-Riemann-Solver: Konstant controls Harten's Entropy-Fix parameter
+	   // AUSM+-up-Riemann-Solver: Konstant sets Ma_infinity (MaInf)
+           scalar Konstant;
+
     // Private Member Functions
 
         //- Disallow default bitwise copy construct

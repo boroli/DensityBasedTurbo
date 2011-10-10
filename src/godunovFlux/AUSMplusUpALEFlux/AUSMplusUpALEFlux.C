@@ -85,7 +85,7 @@ void Foam::AUSMplusUpALEFlux::evaluateFlux
 {
 //        const scalar alpha = 3.0/16.0;
         const scalar beta  = 1.0/8.0;
-	const scalar MaInf = 3.0;
+	const scalar MaInf = Konstant;
 	const scalar Kp    = 0.25;
 	const scalar Ku    = 0.75;
 	const scalar sigma = 1.0;
