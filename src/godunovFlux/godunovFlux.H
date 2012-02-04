@@ -70,7 +70,7 @@ SourceFiles
 #include "roeALEFlux/roeALEFlux.H"
 #include "rusanovALEFlux/rusanovALEFlux.H"
 #include "AUSMplusALEFlux/AUSMplusALEFlux.H"
-#include "AUSMplusUpALEFlux/AUSMplusUpAleFlux.H"
+#include "AUSMplusUpALEFlux/AUSMplusUpALEFlux.H"
 
 #include "limitedSurfaceInterpolationScheme.H"
 
