@@ -459,9 +459,18 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
                 }
             }
 
-	    //An update of the boundary conditions for
-	    //the min max values is not needed
-	    //according to Hrv
+            // o.b. An update of the boundary conditions for
+            // the min max values seems to be needed for coupled patches
+            pMinValue.correctBoundaryConditions();
+            UMinValue.correctBoundaryConditions();
+//             TMinValue.correctBoundaryConditions();
+            rhoMinValue.correctBoundaryConditions();
+            kMinValue.correctBoundaryConditions();
+            pMaxValue.correctBoundaryConditions();
+            UMaxValue.correctBoundaryConditions();
+//             TMaxValue.correctBoundaryConditions();
+            rhoMaxValue.correctBoundaryConditions();
+            kMaxValue.correctBoundaryConditions();
 
             volScalarField cellVolume
             (
@@ -850,25 +859,28 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
         }
     }
 
-    //An update of the boundary conditions for
-    //the limiter values is not needed
-    //according to Hrv
-
+    // o.b. An update of the boundary conditions for
+    // the limiter values seems to be needed for coupled patches
+    pLimiter.correctBoundaryConditions();
+    ULimiter.correctBoundaryConditions();
+//     TLimiter.correctBoundaryConditions();
+    rhoLimiter.correctBoundaryConditions();
+    kLimiter.correctBoundaryConditions();
 
 //     boundMinMax(pLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
 //     boundMinMax(ULimiter[0],dimensionedScalar(0.0),dimensionedScalar(1.0));
 //     boundMinMax(TLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
 
-    Info << "max(pLimiter) "  << max(pLimiter.internalField())
-         << " min(pLimiter) " << min(pLimiter.internalField())  << endl;
-    Info << "max(ULimiter) "  << max(ULimiter.internalField())
-         << " min(ULimiter) " << min(ULimiter.internalField())  << endl;
-//     Info << "max(TLimiter) "  << max(TLimiter.internalField())
-//          << " min(TLimiter) " << min(TLimiter.internalField())  << endl;
-    Info << "max(rhoLimiter) "  << max(rhoLimiter.internalField())
-         << " min(rhoLimiter) " << min(rhoLimiter.internalField())  << endl;
-    Info << "max(kLimiter) "  << max(kLimiter.internalField())
-         << " min(kLimiter) " << min(kLimiter.internalField())  << endl;
+//     Info << "max(pLimiter) "  << max(pLimiter.internalField())
+//          << " min(pLimiter) " << min(pLimiter.internalField())  << endl;
+//     Info << "max(ULimiter) "  << max(ULimiter.internalField())
+//          << " min(ULimiter) " << min(ULimiter.internalField())  << endl;
+// //     Info << "max(TLimiter) "  << max(TLimiter.internalField())
+// //          << " min(TLimiter) " << min(TLimiter.internalField())  << endl;
+//     Info << "max(rhoLimiter) "  << max(rhoLimiter.internalField())
+//          << " min(rhoLimiter) " << min(rhoLimiter.internalField())  << endl;
+//     Info << "max(kLimiter) "  << max(kLimiter.internalField())
+//          << " min(kLimiter) " << min(kLimiter.internalField())  << endl;
 
     // Calculate fluxes at internal faces
     forAll(owner, faceI)

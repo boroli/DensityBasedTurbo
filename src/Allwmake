@@ -6,3 +6,5 @@ wmake transonicMRFDyMFoam
 wmake transonicMRFCHTDyMFoam
 wmake transonicMRFFSIDyMFoam
 wmake transonicSteadySRFFoam
+wmake transonicUnsteadyMRFDyMFoam
+
