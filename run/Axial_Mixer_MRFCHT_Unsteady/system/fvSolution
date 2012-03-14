@@ -67,7 +67,7 @@ Riemann
 {
     secondOrder no;
     multidimLimiter yes;
-    epsilon "2";
+    epsilon 2;
     limiterName vanAlbadaSlope; // vanAlbadaSlope, MinmodSlope, vanLeerSlope
 }
 

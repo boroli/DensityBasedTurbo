@@ -55,14 +55,6 @@ SourceFiles
 #include "SlopeLimiter/BarthJespersenSlopeMulti/BarthJespersenSlopeMulti.H"
 #include "SlopeLimiter/VenkatakrishnanSlopeMulti/VenkatakrishnanSlopeMulti.H"
 
-// #include "SlopeLimiter/BarthJespersenSlope/BarthJespersenSlope.H"
-// #include "SlopeLimiter/MinmodSlope/MinmodSlope.H"
-// #include "SlopeLimiter/vanAlbadaSlope/vanAlbadaSlope.H"
-// #include "SlopeLimiter/vanLeerSlope/vanLeerSlope.H"
-
-// #include "NVDTVD.H"
-// #include "NVDVTVDV.H"
-
 // #include "hllcFlux/hllcFlux.H"
 #include "hllcALEFlux/hllcALEFlux.H"
 // #include "hllcALEDGFlux/hllcALEDGFlux.H"
@@ -104,14 +96,35 @@ class godunovFlux
             //- Velocity
             const  volVectorField& U_;
 
-            //- static Temperature
-            const  volScalarField& T_;
+            //- static density
+            const  volScalarField& rho_;
 
             //- Reference to the thermophysicalModel
             const basicThermo& thermophysicalModel_;
 
             //- Reference to the turbulenceModel
             const compressible::turbulenceModel& turbulenceModel_;
+
+            //- Get face-to-cell addressing: face area points from owner to neighbour
+            const unallocLabelList& owner_;
+
+            //- Get face-to-cell addressing: face area points from owner to neighbour
+            const unallocLabelList& neighbour_;
+
+            //- Reference to the cell centres
+            const volVectorField& cellCenter_;
+
+            //- Reference to the face centres
+            const surfaceVectorField& faceCenter_;
+
+            //- local copy of turbulent kinetic energy
+            volScalarField k_;
+
+            //- local copy of isentropic expansion factor
+            volScalarField kappa_;
+
+            //- store cell volume
+            volScalarField cellVolume_;
 
         // Fluxes
 
@@ -135,22 +148,53 @@ class godunovFlux
             //- Velocity
             volTensorField gradU_;
 
-            //- static Temperature
-            volVectorField gradT_;
+            //- static density
+            volVectorField gradrho_;
 
             //- turbulent kinetic energy
             volVectorField gradk_;
 
-	// Parameters
-	    
-           //- run-time-selectable parameter for the VK limiter
-	   word epsilon;
-	   // run-time-selectable parameter for the Riemann-Solvers:
-	   // Roe-Riemann-Solver: Konstant controls Harten's Entropy-Fix parameter
-	   // AUSM+-up-Riemann-Solver: Konstant sets Ma_infinity (MaInf)
-           scalar Konstant;
+        // Limiters
+
+            //- field for p Limiter
+            volScalarField pLimiter_;
+
+            //- field for U Limiter
+            volVectorField ULimiter_;
+
+            //- field for rho Limiter
+            volScalarField rhoLimiter_;
+
+            //- field for k Limiter
+            volScalarField kLimiter_;
+
+        // Parameters
+
+            //- run-time-selectable parameter for the VK limiter
+            scalar epsilon_;
+
+            //- run-time-selectable parameter for the Riemann-Solvers:
+            // Roe-Riemann-Solver: Konstant controls Harten's Entropy-Fix parameter
+            // AUSM+-up-Riemann-Solver: Konstant sets Ma_infinity (MaInf)
+            scalar Konstant_;
+
+            //- 1D Limiter name
+            word limiterName_;
+
+            //- switch between 1D and multiDimensional limiter
+            bool multidimLimiterSwitch_;
 
     // Private Member Functions
+
+        //- compute Limiter field
+        template<class phiType, class gradPhiType, class Limiter>
+        void updateLimiter
+        (
+            const GeometricField<phiType, fvPatchField, volMesh>& phi,
+            const GeometricField<gradPhiType, fvPatchField, volMesh>& gradPhi,
+            GeometricField<phiType, fvPatchField, volMesh>& phiLimiter,
+            word oneDLimiterName
+        );
 
         //- Disallow default bitwise copy construct
         godunovFlux(const godunovFlux&);
@@ -167,7 +211,7 @@ public:
         (
             const volScalarField& p,
             const volVectorField& U,
-            const volScalarField& T,
+            const volScalarField& rho,
             const basicThermo& thermo,
             const compressible::turbulenceModel& turbulenceModel
         );
@@ -191,35 +235,17 @@ public:
                 return rhoFlux_;
             }
 
-//             //- Return density flux
-//             surfaceScalarField& rhoFlux()
-//             {
-//                 return rhoFlux_;
-//             }
-
             //- Return velocity flux
             const surfaceVectorField& rhoUFlux() const
             {
                 return rhoUFlux_;
             }
 
-//             //- Return velocity flux
-//             surfaceVectorField& rhoUFlux()
-//             {
-//                 return rhoUFlux_;
-//             }
-
             //- Return energy flux
             const surfaceScalarField& rhoEFlux() const
             {
                 return rhoEFlux_;
             }
-
-//             //- Return energy flux
-//             surfaceScalarField& rhoEFlux()
-//             {
-//                 return rhoEFlux_;
-//             }
 
             //- Return mesh flux
             const surfaceVectorField& dotX() const
@@ -245,12 +271,6 @@ public:
             const volTensorField& gradU() const
             {
                 return gradU_;
-            }
-
-            //- Return Temperature gradient
-            const volVectorField& gradT() const
-            {
-                return gradT_;
             }
 
             //- Return TKE gradient
