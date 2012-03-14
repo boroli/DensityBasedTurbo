@@ -162,8 +162,7 @@
     );
 
     label numberSubCycles = 1;
-    label numberRungeKuttaStages = 1;
-    scalarList beta(numberRungeKuttaStages, 1.0);
+    scalarList beta;
     bool secondOrder = true;
 
 #   include "readMultiStage.H"

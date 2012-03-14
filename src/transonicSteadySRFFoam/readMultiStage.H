@@ -1,5 +1,5 @@
     label numberRungeKuttaStages = 1;
-    scalarList beta(numberRungeKuttaStages, 1.0);
+    scalarList beta(1, 1.0);
     bool secondOrder = true;
 
 if(mesh.solutionDict().found("multiStage"))
@@ -7,20 +7,9 @@ if(mesh.solutionDict().found("multiStage"))
     // Read multiStage Coeffs
     dictionary multiStage = mesh.solutionDict().subDict("multiStage");
 
-    if (multiStage.found("numberRungeKuttaStages"))
+    if(multiStage.found("RKCoeff"))
     {
-         multiStage.lookup("numberRungeKuttaStages") >> numberRungeKuttaStages;
-         beta.setSize(numberRungeKuttaStages, 1.0);
-    }
-
-    if(multiStage.found("RKCoeff") && numberRungeKuttaStages > 1)
-    {
-        ITstream rkCoeffInput = multiStage.lookup("RKCoeff");
-
-        forAll(beta,i)
-        {
-            rkCoeffInput >> beta[i];
-        }
+         multiStage.lookup("RKCoeff") >> beta;
     }
 }
 
