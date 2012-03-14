@@ -275,7 +275,18 @@ Foam::godunovFlux<Flux>::godunovFlux
     neighbour_(mesh_.neighbour()),
     cellCenter_(mesh_.C()),
     faceCenter_(mesh_.Cf()),
-    k_(turbulenceModel_.k()),
+//     k_
+//     ("TKE",
+// //         IOobject
+// //         (
+// //             "TKE",
+// //             mesh_.time().timeName(),
+// //             mesh_,
+// //             IOobject::NO_READ,
+// //             IOobject::NO_WRITE
+// //         ),
+//         turbulenceModel_.k()
+//     ),
     kappa_(thermophysicalModel_.Cp()/thermophysicalModel_.Cv()),
     cellVolume_
     (
@@ -333,7 +344,7 @@ Foam::godunovFlux<Flux>::godunovFlux
         // only initialisation!
         rhoFlux_*linearInterpolate
         (
-            thermophysicalModel_.h() + 0.5*magSqr(U_) + k_ - (p_/rho_)
+            thermophysicalModel_.h() + 0.5*magSqr(U_) - (p_/rho_)
         )
     ),
     dotX_
@@ -352,7 +363,7 @@ Foam::godunovFlux<Flux>::godunovFlux
     gradp_(fvc::grad(p_,"grad(pSlope)")),
     gradU_(fvc::grad(U_,"grad(USlope)")),
     gradrho_(fvc::grad(rho_,"grad(rhoSlope)")),
-    gradk_(fvc::grad(k_,"grad(TKE)")),
+    gradk_(fvc::grad(turbulenceModel_.k(),"grad(TKE)")),
     pLimiter_
     (
         IOobject
@@ -435,7 +446,7 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
     cellVolume_.correctBoundaryConditions();
 
     // need a copies here, because the return value is a <tmp>
-    k_ = turbulenceModel_.k();
+    const volScalarField k_("TKE",turbulenceModel_.k());
     // WARNING: only valid for ideal gases!
     kappa_ = thermophysicalModel_.Cp()/thermophysicalModel_.Cv();
 

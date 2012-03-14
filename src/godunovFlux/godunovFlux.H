@@ -118,7 +118,7 @@ class godunovFlux
             const surfaceVectorField& faceCenter_;
 
             //- local copy of turbulent kinetic energy
-            volScalarField k_;
+//             volScalarField k_;
 
             //- local copy of isentropic expansion factor
             volScalarField kappa_;
