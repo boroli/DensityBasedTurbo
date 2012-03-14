@@ -106,16 +106,16 @@ class godunovFlux
             const compressible::turbulenceModel& turbulenceModel_;
 
             //- Get face-to-cell addressing: face area points from owner to neighbour
-            const unallocLabelList& owner_;
+//             const unallocLabelList& owner_;
 
             //- Get face-to-cell addressing: face area points from owner to neighbour
-            const unallocLabelList& neighbour_;
+//             const unallocLabelList& neighbour_;
 
             //- Reference to the cell centres
-            const volVectorField& cellCenter_;
+//             const volVectorField& cellCenter_;
 
             //- Reference to the face centres
-            const surfaceVectorField& faceCenter_;
+//             const surfaceVectorField& faceCenter_;
 
             //- local copy of turbulent kinetic energy
 //             volScalarField k_;

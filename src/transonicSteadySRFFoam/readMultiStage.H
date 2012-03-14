@@ -1,4 +1,3 @@
-    label numberRungeKuttaStages = 1;
     scalarList beta(1, 1.0);
     bool secondOrder = true;
 

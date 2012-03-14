@@ -50,6 +50,13 @@ void Foam::godunovFlux<Flux>::updateLimiter
     word oneDLimiterName
 )
 {
+    // Get face-to-cell addressing: face area point from owner to neighbour
+    const unallocLabelList& owner_ = mesh_.owner();
+    const unallocLabelList& neighbour_ = mesh_.neighbour();
+
+    const volVectorField& cellCenter_ = mesh_.C();
+    const surfaceVectorField& faceCenter_ = mesh_.Cf();
+
     // Reset limiter field
     phiLimiter = pTraits<phiType>::one;
     phiLimiter.correctBoundaryConditions();
@@ -271,10 +278,10 @@ Foam::godunovFlux<Flux>::godunovFlux
     rho_(rho),
     thermophysicalModel_(thermophysicalModel),
     turbulenceModel_(turbulenceModel),
-    owner_(mesh_.owner()),
-    neighbour_(mesh_.neighbour()),
-    cellCenter_(mesh_.C()),
-    faceCenter_(mesh_.Cf()),
+//     owner_(mesh_.owner()),
+//     neighbour_(mesh_.neighbour()),
+//     cellCenter_(mesh_.C()),
+//     faceCenter_(mesh_.Cf()),
 //     k_
 //     ("TKE",
 // //         IOobject
@@ -437,9 +444,16 @@ Foam::godunovFlux<Flux>::godunovFlux
 template<class Flux>
 void Foam::godunovFlux<Flux>::update(Switch secondOrder)
 {
+    // Get face-to-cell addressing: face area point from owner to neighbour
+    const unallocLabelList& owner_ = mesh_.owner();
+    const unallocLabelList& neighbour_ =mesh_.neighbour();
+
     // Get the face area vector
     const surfaceVectorField& Sf = mesh_.Sf();
     const surfaceScalarField& magSf = mesh_.magSf();
+
+    const volVectorField& cellCenter_ = mesh_.C();
+    const surfaceVectorField& faceCenter_ = mesh_.Cf();
 
     // update cell volume
     cellVolume_.internalField() = mesh_.V();
