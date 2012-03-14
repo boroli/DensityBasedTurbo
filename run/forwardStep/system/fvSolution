@@ -35,8 +35,7 @@ solvers
 multiStage
 {
     numberSubCycles 50;
-    numberRungeKuttaStages 4;
-    RKCoeff 0.11 0.2766 0.5 1.0;
+    RKCoeff 4(0.11 0.2766 0.5 1.0);
 }
 
 Riemann

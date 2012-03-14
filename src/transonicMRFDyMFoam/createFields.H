@@ -130,7 +130,7 @@
     );
 
     label numberSubCycles = 1;
-    scalarList beta;
+    scalarList beta(1,1.0);
     bool secondOrder = true;
 
 #   include "readMultiStage.H"
