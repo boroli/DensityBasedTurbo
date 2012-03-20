@@ -57,11 +57,12 @@ Description
     a moving mesh computation. And also the implementation of the mesh.phi()!
 
     References:
-    Weiss, Jonathan M. and Wayne A. Smith, "Preconditioning Applied to Variable
-    and Constant Density Flows." AIAA Journal 33/11 (November 1995): 2050–2057.
+    Venkatakrishnan V. and Mavriplis D. J. , "Implicit Method for the
+    Computation of Unsteady Flows on Unstructured Grids" Journal of
+    Computational Physics, (1996), 127, p. 380-397, equation 10
 
-    Jameson, A. "Time Dependent Calculations Using Multigrid, with Applications
-    to Unsteady Flows Past Airfoils and Wings" AIAA 91-1596
+    Blazek, Jiri. "Computational Fluid Dynamics: Principles and Applications",
+    2001, Referex Engineering, Elsevier (Chapter 6.3)
 
     Arnone, Liou and Povinelli, "Multigrid Time-Accurate Integration of
     Navier-Stokes Equations" AIAA 1993-3361, NASA-TM-106373

@@ -481,7 +481,7 @@ backwardDualDdtScheme<Type>::fvmDdt
     {
         fvm.source() =
         (
-            rDeltaTau*vf.oldTime().internalField()*mesh().V0()
+            rDeltaTau*vf.oldTime().internalField()*mesh().V()
           + coefft0*rDeltaT*vfOld.internalField()*vfOld.mesh().V()
           - coefft00*rDeltaT*vfOldOld.internalField()*vfOldOld.mesh().V()
         );
@@ -559,7 +559,7 @@ backwardDualDdtScheme<Type>::fvmDdt
     {
         fvm.source() = rho.value()*
         (
-            rDeltaTau*vf.oldTime().internalField()*mesh().V0()
+            rDeltaTau*vf.oldTime().internalField()*mesh().V()
           + coefft0*rDeltaT*vfOld.internalField()*vfOld.mesh().V()
           - coefft00*rDeltaT*vfOldOld.internalField()*vfOldOld.mesh().V()
         );
@@ -644,7 +644,7 @@ backwardDualDdtScheme<Type>::fvmDdt
         fvm.source() =
         (
             rDeltaTau*rho.oldTime().internalField()
-            *vf.oldTime().internalField()*mesh().V0()
+            *vf.oldTime().internalField()*mesh().V()
           + coefft0*rDeltaT*rhoOld.internalField()*vfOld.internalField()
             *vfOld.mesh().V()
           - coefft00*rDeltaT*rhoOldOld.internalField()*vfOldOld.internalField()

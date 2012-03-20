@@ -10,7 +10,7 @@ runApplication regionCellSets
 runApplication setsToZones -noFlipMap
 
 
-runApplication transonicMRFDyMFoam
+runApplication transonicUnsteadyMRFDyMFoam
 
 # ----------------------------------------------------------------- end-of-file
 

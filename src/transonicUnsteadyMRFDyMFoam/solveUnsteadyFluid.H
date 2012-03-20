@@ -24,6 +24,7 @@
         // get access to physical deltaT in ddt scheme!
         physDeltaT[1] = subCycleTimeState.deltaT().value();
         physDeltaT[2] = subCycleTimeState.deltaT0().value();
+        dimensionedScalar rDeltaT("myrDt", dimless/dimTime, 1.0/physDeltaT[1]);
 
         // Begin sub-cycling - PseudoTime Integration
         // adjustTimeStep and numberSubCycles > 1 does not make any sense
@@ -209,25 +210,26 @@
                 phi = Godunov.rhoFlux();
 //                 mrfZones.relativeFlux(fvc::interpolate(rho),phi);
 
+                // WARNING! Quick hack!!!
+                // Only valid for constant physical time step size and rigid
+                // body mesh motion, where cell volumes remain constant!
+                // Compute unsteady residual for multi-stage dual-time stepping
+                // see also Venkatakrishnan Journal of Computational
+                // Physics 127, pp380-397, 1996, equation 7
+                volScalarField unsteadyRes("unsteadyRes",
+                    rhoFlux - rDeltaT*(1.5*rho-2.0*rhoOld+0.5*rhoOldOld) );
+
                 // Convergence check
                 // Averaged L2-Norm of fluxes
-                scalar L2NormRho = max(Foam::sqrt(sum(sqr(rhoFlux.internalField()))
+                scalar L2NormRho = max(Foam::sqrt(sum(sqr(unsteadyRes.internalField()))
                     /mesh.nCells()),SMALL);
-                scalar LInfNormRho = max(mag(rhoFlux.internalField()));
-//                 scalar L2NormRhoU = max(Foam::sqrt(sum(magSqr(rhoUFlux.internalField()))
-//                     /mesh.nCells()),SMALL);
-//                 scalar L2NormRhoE = max(Foam::sqrt(sum(sqr(rhoEFlux.internalField()))
-//                     /mesh.nCells()),SMALL);
+                scalar LInfNormRho = max(mag(unsteadyRes.internalField()));
 
                 // Averaged L2-Norm of fluxes
                 Info<< "rho L2 Residual: "
                     << Foam::log10(L2NormRho)  << endl
                     << "rho LInf Residual: "
                     << Foam::log10(LInfNormRho) << endl
-//                     << "rhoU residual: "
-//                     << Foam::log10(L2NormRhoU) << endl
-//                     << "rhoE residual: "
-//                     << Foam::log10(L2NormRhoE) << endl
                     << endl;
 
             // End outer Loop for Runge - Kutta
