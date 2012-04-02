@@ -167,34 +167,25 @@ void mixedSubsonicSupersonicOutletFvPatchScalarField::updateCoeffs()
         const basicThermo& thermo =
             db().lookupObject<basicThermo>("thermophysicalProperties");
 
-        volScalarField Cp = thermo.Cp();
-	volScalarField Cv = thermo.Cv();
-	volScalarField kappa = Cp/Cv;
+        const volScalarField Cp = thermo.Cp();
+	const volScalarField Cv = thermo.Cv();
+	
+	const vectorField normalVector = patch().nf();
 
         const fvPatchField<scalar>& Cpp =
             patch().patchField<volScalarField, scalar>(Cp);
         
 	const fvPatchField<scalar>& Cvp =
-            patch().patchField<volScalarField, scalar>(Cv);
-	    
-	const fvPatchField<scalar>& kappap =
-            patch().patchField<volScalarField, scalar>(kappa);	
+            patch().patchField<volScalarField, scalar>(Cv);	
 
 	refValue() = fixedValue_; 
 	    
 	forAll(Tp, patchI)
 	{
-	    scalar Map = mag(Up[patchI])
-	        /sqrt(kappap[patchI]*(Cpp[patchI]-Cvp[patchI])*Tp[patchI]);
+	    scalar Map = mag(normalVector[patchI] & Up[patchI])
+	        /sqrt((Cpp[patchI]/Cvp[patchI])*(Cpp[patchI]-Cvp[patchI])*Tp[patchI]);
 	    
-	    if(Map >= 1.0)
-	    {
-	        valueFraction()[patchI] = 0.0;
-	    }
-	    else
-	    {
-	        valueFraction()[patchI] = 1.0;
-	    }
+	    valueFraction()[patchI] = pos(Map-1.0) ? 0.0 : 1.0;
 	}
 
     mixedFvPatchScalarField::updateCoeffs();
