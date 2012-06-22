@@ -34,15 +34,14 @@ solvers
 
 multiStage
 {
-    numberRungeKuttaStages 4;
-    RKCoeff 0.11 0.2766 0.5 1.0;
+    RKCoeff 4(0.11 0.2766 0.5 1.0);
 }
 
 Riemann
 {
     secondOrder yes;            // activate 2nd order extensions
     multidimLimiter yes;        // Switch between 1D and mutliD limiters
-    epsilon "5";                // VK constant
+    epsilon 5;                // VK constant
     limiterName vanAlbadaSlope; // vanAlbadaSlope, MinmodSlope, vanLeerSlope
 }
 

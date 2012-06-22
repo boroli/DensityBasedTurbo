@@ -26,7 +26,7 @@ Application
     transonicMRFDyMFoam
 
 Description
-    Density-based compressible multi-stage (cf. JST) time-marching flow solver.
+    Density-based compressible multi-stage time-marching flow solver.
     The multi-stage coefficients and the number of multi-stages are runtime
     selectable. In order to evaluate the convective terms, a Riemann solver is
     utilized.
@@ -36,10 +36,12 @@ Description
     TODO: Make the Riemann solver and multidimensional limiter run-time selectable.
 
     References:
-    Jameson, Schmidt and Turkel, "Numerical Solution of the Euler Equations by
-    Finite Volume Methods Using Runge-Kutta Time-Stepping Schemes",
-    AIAA 1981-1259
+    Venkatakrishnan V. and Mavriplis D. J. , "Implicit Method for the
+    Computation of Unsteady Flows on Unstructured Grids" Journal of
+    Computational Physics, (1996), 127, p. 380-397, equation 10
 
+    Blazek, Jiri. "Computational Fluid Dynamics: Principles and Applications",
+    2001, Referex Engineering, Elsevier
 
 Author
     Oliver Borm  All rights reserved.

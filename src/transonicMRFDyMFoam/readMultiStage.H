@@ -1,7 +1,3 @@
-    numberSubCycles = 1;
-    numberRungeKuttaStages = 1;
-    beta.setSize(numberRungeKuttaStages, 1.0);
-    secondOrder = true;
 
 if(mesh.solutionDict().found("multiStage"))
 {
@@ -14,22 +10,10 @@ if(mesh.solutionDict().found("multiStage"))
          multiStage.lookup("numberSubCycles") >> numberSubCycles;
     }
 
-    // Read number of multi-stages
-    if (multiStage.found("numberRungeKuttaStages"))
-    {
-         multiStage.lookup("numberRungeKuttaStages") >> numberRungeKuttaStages;
-         beta.setSize(numberRungeKuttaStages, 1.0);
-    }
-
     // Read multi-stage coeffs
-    if(multiStage.found("RKCoeff") && numberRungeKuttaStages > 1)
+    if(multiStage.found("RKCoeff"))
     {
-        ITstream rkCoeffInput = multiStage.lookup("RKCoeff");
-
-        forAll(beta,betai)
-        {
-            rkCoeffInput >> beta[betai];
-        }
+         multiStage.lookup("RKCoeff") >> beta;
     }
 }
 

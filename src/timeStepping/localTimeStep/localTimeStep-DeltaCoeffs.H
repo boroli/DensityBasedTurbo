@@ -26,15 +26,14 @@ Class
     Foam::localTimeStep
 
 Description
-    The time-step is computed locally so that the local Courant number
-    does not exceed the specified value.
-
-    References:
-    Blazek, Jiri. "Computational Fluid Dynamics: Principles and Applications",
-    2001, Referex Engineering, Elsevier, Chapter 6.1.4 Method 2
+    The time-step is computed based on OpenFOAM's deltaCoeffitients which uses
+    the distance of the cell centers to the neighbouring cells. The maximum
+    possible timp-step is then evaluated in such a manner that the CFL-criterion
+    is not violated. 
 
 Author
     Oliver Borm  All rights reserved.
+    Sebastian Saegeler  All rights reserved.
 
 SourceFiles
     localTimeStep.C
@@ -82,11 +81,9 @@ class localTimeStep
        //- CFL number limited local time step field
        volScalarField CoDeltaT_;
 
-       //- projected summed areas of faces for all cells
-       volVectorField deltaS_;
+       //- maximum alowable time step in each cell
+       volScalarField maxDeltaT_;
        
-       //- volScalarField of all cell volumes 
-       volScalarField cellVolume_;
 
     // Private Member Functions
 
@@ -96,8 +93,7 @@ class localTimeStep
         //- Disallow default bitwise assignment
         void operator=(const localTimeStep&);
 
-        //- Update the characteristic length scale
-        void updateDeltaX();
+
 
 public:
 
@@ -129,6 +125,7 @@ public:
         //- Update the local deltaT field
         // and adjust it to the minimum value optionally
         void update(scalar maxCo, Switch adjustTimeStep);
+
 
         //- Update the local deltaT field
         void update(scalar maxCo);

@@ -8,7 +8,7 @@
 
     volScalarField& h = thermo.h();
     volScalarField& p = thermo.p();
-    const volScalarField& T = thermo.T();
+//     const volScalarField& T = thermo.T();
 
     Info<< "Reading field rho\n" << endl;
     volScalarField rho
@@ -53,11 +53,11 @@
     );
 
     Info<< "Create Riemann solver\n" << endl;
-    godunovFlux<hllcALEFlux> Godunov(p, U, T, thermo, turbulence());
-//     godunovFlux<AUSMplusALEFlux> Godunov(p, U, T, thermo, turbulence());
-//     godunovFlux<AUSMplusUpALEFlux> Godunov(p, U, T, thermo, turbulence());
-//     godunovFlux<roeALEFlux> Godunov(p, U, T, thermo, turbulence());
-//     godunovFlux<rusanovALEFlux> Godunov(p, U, T, thermo, turbulence());   
+    godunovFlux<hllcALEFlux> Godunov(p, U, rho, thermo, turbulence());
+//     godunovFlux<AUSMplusALEFlux> Godunov(p, U, rho, thermo, turbulence());
+//     godunovFlux<AUSMplusUpALEFlux> Godunov(p, U, rho, thermo, turbulence());
+//     godunovFlux<roeALEFlux> Godunov(p, U, rho, thermo, turbulence());
+//     godunovFlux<rusanovALEFlux> Godunov(p, U, rho, thermo, turbulence());
 
     volVectorField rhoU
     (

@@ -1,6 +1,6 @@
 Residuals
 {
-  expr "rho residual: (%f%)";
+  expr "rho L2 Residual: (%f%)";
   name Residuals;
   theTitle "Residuals";
   titles ( "Averaged L2 Rho  Residual" );
@@ -9,16 +9,9 @@ Residuals
 
 AddRhoUToResiduals
 {
-  expr "rhoU residual: (%f%)";
-  titles ( "Averaged L2 RhoU Residual" );
+  expr "rho LInf Residual: (%f%)";
+  titles ( "LInf Rho Residual" );
   type slave;
   master Residuals;
 }
 
-AddRhoEToResiduals
-{
-  expr "rhoE residual: (%f%)";
-  titles ( "Averaged L2 RhoE Residual" );
-  type slave;
-  master Residuals;
-}

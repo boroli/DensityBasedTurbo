@@ -25,6 +25,7 @@
 *.la
 *.so
 *.jar
+*.pyc
 
 # derived files
 lex.yy.c

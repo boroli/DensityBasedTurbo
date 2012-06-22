@@ -17,6 +17,7 @@ FoamFile
 
 simulationType  RASModel;
 
-turbulentFields  k omega;
+// turbulentFields  k omega;
+turbulentFields  k omega rhoCr rhoCu;
 
 // ************************************************************************* //

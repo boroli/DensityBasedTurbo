@@ -40,6 +40,224 @@ Author
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
+template<class Flux> // For the class
+template<class phiType, class gradPhiType, class Limiter> // For the function
+void Foam::godunovFlux<Flux>::updateLimiter
+(
+    const GeometricField<phiType, fvPatchField, volMesh>& phi,
+    const GeometricField<gradPhiType, fvPatchField, volMesh>& gradPhi,
+    GeometricField<phiType, fvPatchField, volMesh>& phiLimiter,
+    word oneDLimiterName
+)
+{
+    // Get face-to-cell addressing: face area point from owner to neighbour
+    const unallocLabelList& owner_ = mesh_.owner();
+    const unallocLabelList& neighbour_ = mesh_.neighbour();
+
+    const volVectorField& cellCenter_ = mesh_.C();
+    const surfaceVectorField& faceCenter_ = mesh_.Cf();
+
+    // Reset limiter field
+    phiLimiter = pTraits<phiType>::one;
+    phiLimiter.correctBoundaryConditions();
+
+    if (multidimLimiterSwitch_)
+    {
+        // 2nd order correction
+        IStringStream blendingFactor(name(epsilon_));
+
+        Limiter phiLimiterFunction(blendingFactor);
+
+        GeometricField<phiType, fvPatchField, volMesh> phiMinValue("phiMin",phi);
+        GeometricField<phiType, fvPatchField, volMesh> phiMaxValue("phiMax",phi);
+
+        // for BJ/VK find min/max for each phi
+        // internal face
+        forAll(owner_, faceI)
+        {
+            label own = owner_[faceI];
+            label nei = neighbour_[faceI];
+
+            // min value owner
+            phiMinValue[own] =
+                min(phiMinValue[own], phi[nei]);
+            // max value owner
+            phiMaxValue[own] =
+                max(phiMaxValue[own], phi[nei]);
+
+            // min value neighbour
+            phiMinValue[nei] =
+                min(phiMinValue[nei], phi[own]);
+            // max value neighbour
+            phiMaxValue[nei] =
+                max(phiMaxValue[nei], phi[own]);
+        }
+
+        // Update coupled boundary min/max values of primitive variables
+        forAll(phi.boundaryField(), patchi)
+        {
+            const fvPatchField<phiType>& pphi = phi.boundaryField()[patchi];
+            const unallocLabelList& faceCells = pphi.patch().faceCells();
+
+            if (pphi.coupled())
+            {
+                // primitive variables
+                const Field<phiType> pphiRight = pphi.patchNeighbourField();
+
+                forAll(pphi, faceI)
+                {
+                    label own = faceCells[faceI];
+
+                    // min values at coupled boundary faces
+                    phiMinValue[own] =
+                        min(phiMinValue[own], pphiRight[faceI]);
+
+                    // max values at coupled boundary faces
+                    phiMaxValue[own] =
+                        max(phiMaxValue[own], pphiRight[faceI]);
+                }
+            }
+        }
+
+        // o.b. An update of the boundary conditions for
+        // the min/max values seems to be needed for coupled patches
+        phiMinValue.correctBoundaryConditions();
+        phiMaxValue.correctBoundaryConditions();
+
+        // compute for each cell a limiter
+        // Loop over all faces with different deltaR vector
+        forAll(owner_, faceI)
+        {
+            label own = owner_[faceI];
+            label nei = neighbour_[faceI];
+
+            // find minimal limiter value in each cell
+            phiLimiter[own] =
+            min
+            (
+                phiLimiter[own], phiLimiterFunction.limiter
+                (
+                    cellVolume_[own],
+                    1.0, // flux dummy
+                    phiMaxValue[own]-phi[own],
+                    phiMinValue[own]-phi[own],
+                    gradPhi[own],
+                    gradPhi[own],
+                    faceCenter_[faceI]-cellCenter_[own]
+                )
+            );
+
+            phiLimiter[nei] =
+            min
+            (
+                phiLimiter[nei],
+                phiLimiterFunction.limiter
+                (
+                    cellVolume_[nei],
+                    1.0, // flux dummy
+                    phiMaxValue[nei]-phi[nei],
+                    phiMinValue[nei]-phi[nei],
+                    gradPhi[nei],
+                    gradPhi[nei],
+                    faceCenter_[faceI]-cellCenter_[nei]
+                )
+            );
+        }
+
+        // Update coupled boundary limiters
+        forAll(phi.boundaryField(), patchi)
+        {
+            const fvPatchField<phiType>& pphi = phi.boundaryField()[patchi];
+            const unallocLabelList& faceCells = pphi.patch().faceCells();
+
+            if (pphi.coupled())
+            {
+                // cell and face centers
+                const vectorField delta =  pphi.patch().delta();
+
+                forAll(pphi, faceI)
+                {
+                    label own = faceCells[faceI];
+
+                    phiLimiter[own] = 
+                    min
+                    (
+                        phiLimiter[own],
+                        phiLimiterFunction.limiter
+                        (
+                            cellVolume_[own],
+                            1.0, // flux dummy
+                            phiMaxValue[own]-phi[own],
+                            phiMinValue[own]-phi[own],
+                            gradPhi[own],
+                            gradPhi[own],
+                            delta[faceI]
+                        )
+                    );
+                }
+            }
+//             else
+//             {
+//                 forAll(pphi, faceI)
+//                 {
+//                     label own = faceCells[faceI];
+//                     // Calculate minimal limiters
+//                     phiLimiter[own] =
+//                         min(phiLimiter[own], pTraits<phiType>::one);
+//                 }
+//             }
+        }
+    }
+    else
+    {
+        IStringStream phiSchemeData(oneDLimiterName);
+
+        // compute face based limiters
+        surfaceScalarField phiLimiterSurface =
+            limitedSurfaceInterpolationScheme<phiType>::New
+            (
+                mesh_,
+                rhoFlux_,
+                phiSchemeData
+            )().limiter(phi);
+
+        // use smallest face based limiter for volume
+        forAll(owner_, faceI)
+        {
+            label own = owner_[faceI];
+            label nei = neighbour_[faceI];
+
+            // find minimal limiter value in each cell
+            phiLimiter[own] =
+                min(phiLimiter[own], phiLimiterSurface[faceI]*pTraits<phiType>::one);
+
+            phiLimiter[nei] =
+                min(phiLimiter[nei], phiLimiterSurface[faceI]*pTraits<phiType>::one);
+        }
+
+        // Update coupled boundary limiters
+        forAll(phi.boundaryField(), patchi)
+        {
+            const fvPatchField<phiType>& pphi = phi.boundaryField()[patchi];
+            const unallocLabelList& faceCells = pphi.patch().faceCells();
+
+            if (pphi.coupled())
+            {
+                forAll(pphi, faceI)
+                {
+                    label own = faceCells[faceI];
+
+                    phiLimiter[own] =
+                        min(phiLimiter[own], phiLimiterSurface[faceI]*pTraits<phiType>::one);
+                }
+            }
+        }
+    }
+
+    // o.b. An update of the boundary conditions for
+    // the limiter values seems to be needed for coupled patches
+    phiLimiter.correctBoundaryConditions();
+}
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -49,7 +267,7 @@ Foam::godunovFlux<Flux>::godunovFlux
 (
     const volScalarField& p,
     const volVectorField& U,
-    const volScalarField& T,
+    const volScalarField& rho,
     const basicThermo& thermophysicalModel,
     const compressible::turbulenceModel& turbulenceModel
 )
@@ -57,9 +275,40 @@ Foam::godunovFlux<Flux>::godunovFlux
     mesh_(p.mesh()),
     p_(p),
     U_(U),
-    T_(T),
+    rho_(rho),
     thermophysicalModel_(thermophysicalModel),
     turbulenceModel_(turbulenceModel),
+//     owner_(mesh_.owner()),
+//     neighbour_(mesh_.neighbour()),
+//     cellCenter_(mesh_.C()),
+//     faceCenter_(mesh_.Cf()),
+//     k_
+//     ("TKE",
+// //         IOobject
+// //         (
+// //             "TKE",
+// //             mesh_.time().timeName(),
+// //             mesh_,
+// //             IOobject::NO_READ,
+// //             IOobject::NO_WRITE
+// //         ),
+//         turbulenceModel_.k()
+//     ),
+    kappa_(thermophysicalModel_.Cp()/thermophysicalModel_.Cv()),
+    cellVolume_
+    (
+        IOobject
+        (
+            "cellVolume",
+            mesh_.time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimVolume,
+        zeroGradientFvPatchScalarField::typeName
+    ),
     rhoFlux_
     (
         IOobject
@@ -72,8 +321,7 @@ Foam::godunovFlux<Flux>::godunovFlux
         ),
         // fluxes in mass conservation equation: \varrho \vec{u}
         // only initialisation!
-        (linearInterpolate(p/(( thermophysicalModel_.Cp()
-        - thermophysicalModel_.Cv() )*T)*U) & mesh_.Sf())
+        (linearInterpolate(rho_*U_) & mesh_.Sf())
     ),
     rhoUFlux_
     (
@@ -87,7 +335,7 @@ Foam::godunovFlux<Flux>::godunovFlux
         ),
         // fluxes in momentum equation: \varrho \vec{u} \vec{u}
         // only initialisation!
-        rhoFlux_*linearInterpolate(U)
+        rhoFlux_*linearInterpolate(U_)
     ),
     rhoEFlux_
     (
@@ -101,7 +349,10 @@ Foam::godunovFlux<Flux>::godunovFlux
         ),
         // fluxes in total energy equation: \varrho E \vec{u}
         // only initialisation!
-        rhoFlux_*linearInterpolate(thermophysicalModel_.Cv()*T+0.5*magSqr(U))
+        rhoFlux_*linearInterpolate
+        (
+            thermophysicalModel_.h() + 0.5*magSqr(U_) - (p_/rho_)
+        )
     ),
     dotX_
     (
@@ -118,10 +369,68 @@ Foam::godunovFlux<Flux>::godunovFlux
     ),
     gradp_(fvc::grad(p_,"grad(pSlope)")),
     gradU_(fvc::grad(U_,"grad(USlope)")),
-    gradT_(fvc::grad(T_,"grad(TSlope)")),
+    gradrho_(fvc::grad(rho_,"grad(rhoSlope)")),
     gradk_(fvc::grad(turbulenceModel_.k(),"grad(TKE)")),
-    epsilon("5"),
-    Konstant(0.05)
+    pLimiter_
+    (
+        IOobject
+        (
+            "pLimiter",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("pLimiter", dimless, 1.0),
+        zeroGradientFvPatchScalarField::typeName
+    ),
+    ULimiter_
+    (
+        IOobject
+        (
+            "ULimiter",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh(),
+        dimensionedVector("ULimiter", dimless, vector::one),
+        zeroGradientFvPatchVectorField::typeName
+    ),
+    rhoLimiter_
+    (
+        IOobject
+        (
+            "rhoLimiter",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("rhoLimiter", dimless, 1.0),
+        zeroGradientFvPatchScalarField::typeName
+    ),
+    kLimiter_
+    (
+        IOobject
+        (
+            "kLimiter",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("kLimiter", dimless, 1.0),
+        zeroGradientFvPatchScalarField::typeName
+    ),
+    epsilon_(5),
+    Konstant_(0.05),
+    limiterName_("vanAlbadaSlope"),
+    multidimLimiterSwitch_(false)
 {}
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
@@ -136,54 +445,24 @@ template<class Flux>
 void Foam::godunovFlux<Flux>::update(Switch secondOrder)
 {
     // Get face-to-cell addressing: face area point from owner to neighbour
-    const unallocLabelList& owner = mesh_.owner();
-    const unallocLabelList& neighbour = mesh_.neighbour();
+    const unallocLabelList& owner_ = mesh_.owner();
+    const unallocLabelList& neighbour_ =mesh_.neighbour();
 
     // Get the face area vector
     const surfaceVectorField& Sf = mesh_.Sf();
     const surfaceScalarField& magSf = mesh_.magSf();
 
-    const volVectorField& cellCenter = mesh_.C();
-    const surfaceVectorField& faceCenter = mesh_.Cf();
+    const volVectorField& cellCenter_ = mesh_.C();
+    const surfaceVectorField& faceCenter_ = mesh_.Cf();
 
-    // need a copy here, because the return value is a <tmp>
-//     const volScalarField Cv_ = thermophysicalModel_.Cv();
-//     const volScalarField R_ =
-//         ( thermophysicalModel_.Cp() - thermophysicalModel_.Cv() );
-    const volScalarField kappa_ =
-        thermophysicalModel_.Cp()/thermophysicalModel_.Cv();
+    // update cell volume
+    cellVolume_.internalField() = mesh_.V();
+    cellVolume_.correctBoundaryConditions();
 
-    // only valid for ideal gas!
-    volScalarField rho_("godunovRho",thermophysicalModel_.rho());
-//     volScalarField rho_("godunovRho",p_/(R_*T_));
-//     rho_.correctBoundaryConditions();
-    volVectorField gradrho_ = fvc::grad(rho_,"grad(rhoSlope)");
-
+    // need a copies here, because the return value is a <tmp>
     const volScalarField k_("TKE",turbulenceModel_.k());
-
-    // Read field bounds
-//     dictionary fieldBounds = mesh_.solutionDict().subDict("fieldBounds");
-
-//     // Pressure bounds
-//     dimensionedScalar pMin("pMin", p_.dimensions(), 0);
-//     dimensionedScalar pMax("pMax", p_.dimensions(), 0);
-//     fieldBounds.lookup(p_.name()) >> pMin.value() >> pMax.value();
-// 
-//     // Velocity bounds
-//     dimensionedScalar smallU("smallU", dimVelocity, 1e-10);
-//     dimensionedScalar UMax("UMax", U_.dimensions(), 0);
-//     fieldBounds.lookup(U_.name()) >> UMax.value();
-// 
-//     // Temperature bounds
-//     dimensionedScalar TMin("TMin", T_.dimensions(), 0);
-//     dimensionedScalar TMax("TMax", T_.dimensions(), 0);
-//     fieldBounds.lookup(T_.name()) >> TMin.value() >> TMax.value();
-
-    // Switch between 1D and MultiDimensional Limiters
-    bool multidimLimiterSwitch = false;
-
-    // RTS 1D Limiters
-    word limiterName("vanAlbadaSlope");
+    // WARNING: only valid for ideal gases!
+    kappa_ = thermophysicalModel_.Cp()/thermophysicalModel_.Cv();
 
     // read riemann solver coeffs
     if(mesh_.solutionDict().found("Riemann"))
@@ -192,704 +471,58 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
         dictionary riemann = mesh_.solutionDict().subDict("Riemann");
         if (riemann.found("multidimLimiter"))
         {
-            multidimLimiterSwitch = Switch(riemann.lookup("multidimLimiter"));
+            multidimLimiterSwitch_ = Switch(riemann.lookup("multidimLimiter"));
         }
         if (riemann.found("limiterName"))
         {
-            limiterName = word(riemann.lookup("limiterName"));
+            limiterName_ = word(riemann.lookup("limiterName"));
         }
-        if (riemann.found("epsilon"))
-        {
-            epsilon = word(riemann.lookup("epsilon"));
-        }
-        Konstant = riemann.lookupOrDefault("RiemannSolverKonstant",Konstant);
+        epsilon_ = riemann.lookupOrDefault("epsilon",epsilon_);
+        Konstant_ = riemann.lookupOrDefault("RiemannSolverKonstant",Konstant_);
     }
 
     // 2nd order correction
-    IStringStream blendingFactor(epsilon);
-
-    // MultiDimensional Limiters
-//     BarthJespersenSlopeMultiLimiter scalarLimiter(blendingFactor);
-//     BarthJespersenSlopeMultiLimiter vectorLimiter(blendingFactor);
-
-    VenkatakrishnanSlopeMultiLimiter scalarLimiter(blendingFactor);
-    VenkatakrishnanSlopeMultiLimiter vectorLimiter(blendingFactor);
-
-    // 1D Limiters
-//     BarthJespersenSlopeLimiter<NVDTVD> scalarLimiter(blendingFactor);
-//     BarthJespersenSlopeLimiter<NVDVTVDV> vectorLimiter(blendingFactor);
-
-//     MinmodSlopeLimiter<NVDTVD> scalarLimiter(blendingFactor);
-//     MinmodSlopeLimiter<NVDVTVDV> vectorLimiter(blendingFactor);
-
-//     vanAlbadaSlopeLimiter<NVDTVD> scalarLimiter(blendingFactor);
-//     vanAlbadaSlopeLimiter<NVDVTVDV> vectorLimiter(blendingFactor);
-
-//     vanLeerSlopeLimiter<NVDTVD> scalarLimiter(blendingFactor);
-//     vanLeerSlopeLimiter<NVDVTVDV> vectorLimiter(blendingFactor);
-
-    // Calculate and store the cell based limiter
-    volScalarField pLimiter
-    (
-        IOobject
-        (
-            "pLimiter",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedScalar("pLimiter", dimless, 1.0),
-        zeroGradientFvPatchScalarField::typeName
-    );
-
-    volVectorField ULimiter
-    (
-        IOobject
-        (
-            "ULimiter",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedVector("ULimiter", dimless, vector::one),
-        zeroGradientFvPatchVectorField::typeName
-    );
-
-//     volScalarField TLimiter
-//     (
-//         IOobject
-//         (
-//             "TLimiter",
-//             mesh().time().timeName(),
-//             mesh(),
-//             IOobject::NO_READ,
-//             IOobject::NO_WRITE
-//         ),
-//         mesh(),
-//         dimensionedScalar("TLimiter", dimless, 1.0),
-//         zeroGradientFvPatchScalarField::typeName
-//     );
-
-    volScalarField rhoLimiter
-    (
-        IOobject
-        (
-            "rhoLimiter",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedScalar("rhoLimiter", dimless, 1.0),
-        zeroGradientFvPatchScalarField::typeName
-    );
-
-    volScalarField kLimiter
-    (
-        IOobject
-        (
-            "kLimiter",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedScalar("kLimiter", dimless, 1.0),
-        zeroGradientFvPatchScalarField::typeName
-    );
-
     if (secondOrder)
     {
         // Update the primitive gradients
         gradp_ = fvc::grad(p_,"grad(pSlope)");
         gradU_ = fvc::grad(U_,"grad(USlope)");
-//         gradT_ = fvc::grad(T_,"grad(TSlope)");
+        gradrho_ = fvc::grad(rho_,"grad(rhoSlope)");
         if (max(k_).value() > 0.0)
         {
-            gradk_ = fvc::grad(k_);
+            gradk_ = fvc::grad(k_,"grad(TKE)");
         }
 
-        if (multidimLimiterSwitch)
-        {
-            volScalarField pMinValue("pMin",p_);
-            volScalarField pMaxValue("pMax",p_);
-            volVectorField UMinValue("UMin",U_);
-            volVectorField UMaxValue("UMax",U_);
-//             volScalarField TMinValue("TMin",T_);
-//             volScalarField TMaxValue("TMax",T_);
-
-            volScalarField rhoMinValue("rhoMin",rho_);
-            volScalarField rhoMaxValue("rhoMax",rho_);
-
-            volScalarField kMinValue("kMin",k_);
-            volScalarField kMaxValue("kMax",k_);
-
-            // for BJ /VK find min/max of each value for each variable
-            // internal face
-            forAll(owner, faceI)
-            {
-                label own = owner[faceI];
-                label nei = neighbour[faceI];
-
-                // min values
-                pMinValue[own] =
-                    min(pMinValue[own], p_[nei]);
-
-                pMinValue[nei] =
-                    min(pMinValue[nei], p_[own]);
-
-                UMinValue[own] =
-                    min(UMinValue[own], U_[nei]);
-
-                UMinValue[nei] =
-                    min(UMinValue[nei], U_[own]);
-
-//                 TMinValue[own] =
-//                     min(TMinValue[own], T_[nei]);
-// 
-//                 TMinValue[nei] =
-//                     min(TMinValue[nei], T_[own]);
-
-                rhoMinValue[own] =
-                    min(rhoMinValue[own], rho_[nei]);
-
-                rhoMinValue[nei] =
-                    min(rhoMinValue[nei], rho_[own]);
-
-                kMinValue[own] =
-                    min(kMinValue[own], k_[nei]);
-
-                kMinValue[nei] =
-                    min(kMinValue[nei], k_[own]);
-
-                // max values
-                pMaxValue[own] =
-                    max(pMaxValue[own], p_[nei]);
-
-                pMaxValue[nei] =
-                    max(pMaxValue[nei], p_[own]);
-
-                UMaxValue[own] =
-                    max(UMaxValue[own], U_[nei]);
-
-                UMaxValue[nei] =
-                    max(UMaxValue[nei], U_[own]);
-
-//                 TMaxValue[own] =
-//                     max(TMaxValue[own], T_[nei]);
-// 
-//                 TMaxValue[nei] =
-//                     max(TMaxValue[nei], T_[own]);
-
-                rhoMaxValue[own] =
-                    max(rhoMaxValue[own], rho_[nei]);
-
-                rhoMaxValue[nei] =
-                    max(rhoMaxValue[nei], rho_[own]);
-
-                kMaxValue[own] =
-                    max(kMaxValue[own], k_[nei]);
-
-                kMaxValue[nei] =
-                    max(kMaxValue[nei], k_[own]);
-            }
-
-            // Update coupled boundary min/max values of primitive variables
-            forAll(p_.boundaryField(), patchi)
-            {
-                const fvPatchScalarField& pp = p_.boundaryField()[patchi];
-                const fvPatchVectorField& pU = U_.boundaryField()[patchi];
-//                 const fvPatchScalarField& pT = T_.boundaryField()[patchi];
-                const fvPatchScalarField& prho = rho_.boundaryField()[patchi];
-                const fvPatchScalarField& pk = k_.boundaryField()[patchi];
-
-                const unallocLabelList& faceCells = pp.patch().faceCells();
-
-                if (pp.coupled())
-                {
-                    // primitive variables
-                    const scalarField ppRight = pp.patchNeighbourField();
-                    const vectorField pURight = pU.patchNeighbourField();
-//                     const scalarField pTRight = pT.patchNeighbourField();
-                    const scalarField prhoRight = prho.patchNeighbourField();
-                    const scalarField pkRight = pk.patchNeighbourField();
-
-                    forAll(pp, facei)
-                    {
-                        label own = faceCells[facei];
-
-                        // min values at coupled boundary faces
-                        pMinValue[own] =
-                            min(pMinValue[own], ppRight[facei]);
-
-                        UMinValue[own] =
-                            min(UMinValue[own], pURight[facei]);
-
-//                         TMinValue[own] =
-//                             min(TMinValue[own], pTRight[facei]);
-
-                        rhoMinValue[own] =
-                            min(rhoMinValue[own], prhoRight[facei]);
-
-                        kMinValue[own] =
-                            min(kMinValue[own], pkRight[facei]);
-
-                        // max values at coupled boundary faces
-                        pMaxValue[own] =
-                            max(pMaxValue[own], ppRight[facei]);
-
-                        UMaxValue[own] =
-                            max(UMaxValue[own], pURight[facei]);
-
-//                         TMaxValue[own] =
-//                             max(TMaxValue[own], pTRight[facei]);
-
-                        rhoMaxValue[own] =
-                            max(rhoMaxValue[own], prhoRight[facei]);
-
-                        kMaxValue[own] =
-                            max(kMaxValue[own], pkRight[facei]);
-                    }
-                }
-            }
-
-            // o.b. An update of the boundary conditions for
-            // the min max values seems to be needed for coupled patches
-            pMinValue.correctBoundaryConditions();
-            UMinValue.correctBoundaryConditions();
-//             TMinValue.correctBoundaryConditions();
-            rhoMinValue.correctBoundaryConditions();
-            kMinValue.correctBoundaryConditions();
-            pMaxValue.correctBoundaryConditions();
-            UMaxValue.correctBoundaryConditions();
-//             TMaxValue.correctBoundaryConditions();
-            rhoMaxValue.correctBoundaryConditions();
-            kMaxValue.correctBoundaryConditions();
-
-            volScalarField cellVolume
-            (
-                IOobject
-                (
-                    "cellVolume",
-                    mesh().time().timeName(),
-                    mesh(),
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                mesh(),
-                dimVolume,
-                zeroGradientFvPatchScalarField::typeName
-            );
-
-            cellVolume.internalField() = mesh().V();
-            cellVolume.correctBoundaryConditions();
-
-            // compute for each cell a limiter
-            // Loop over all faces with different deltaR vector
-            forAll(owner, faceI)
-            {
-                label own = owner[faceI];
-                label nei = neighbour[faceI];
-
-                vector deltaRLeft  = faceCenter[faceI] - cellCenter[own];
-                vector deltaRRight = faceCenter[faceI] - cellCenter[nei];
-
-                // flux dummy
-                scalar upwindFlux = 1.0;
-
-                scalar pOwnerLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[own],
-                    upwindFlux,
-                    pMaxValue[own]-p_[own],
-                    pMinValue[own]-p_[own],
-                    gradp_[own],
-                    gradp_[own],
-                    deltaRLeft
-                );
-                scalar pNeighbourLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[nei],
-                    upwindFlux,
-                    pMaxValue[nei]-p_[nei],
-                    pMinValue[nei]-p_[nei],
-                    gradp_[nei],
-                    gradp_[nei],
-                    deltaRRight
-                );
-
-                vector UOwnerLimiterV = vectorLimiter.limiter
-                (
-                    cellVolume[own],
-                    upwindFlux,
-                    UMaxValue[own]-U_[own],
-                    UMinValue[own]-U_[own],
-                    gradU_[own],
-                    gradU_[own],
-                    deltaRLeft
-                );
-                vector UNeighbourLimiterV = vectorLimiter.limiter
-                (
-                    cellVolume[nei],
-                    upwindFlux,
-                    UMaxValue[nei]-U_[nei],
-                    UMinValue[nei]-U_[nei],
-                    gradU_[nei],
-                    gradU_[nei],
-                    deltaRRight
-                );
-
-//                 scalar TOwnerLimiter = scalarLimiter.limiter
-//                 (
-//                     cellVolume[own],
-//                     upwindFlux,
-//                     TMaxValue[own]-T_[own],
-//                     TMinValue[own]-T_[own],
-//                     gradT_[own],
-//                     gradT_[own],
-//                     deltaRLeft
-//                 );
-//                 scalar TNeighbourLimiter = scalarLimiter.limiter
-//                 (
-//                     cellVolume[nei],
-//                     upwindFlux,
-//                     TMaxValue[nei]-T_[nei],
-//                     TMinValue[nei]-T_[nei],
-//                     gradT_[nei],
-//                     gradT_[nei],
-//                     deltaRRight
-//                 );
-
-                scalar rhoOwnerLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[own],
-                    upwindFlux,
-                    rhoMaxValue[own]-rho_[own],
-                    rhoMinValue[own]-rho_[own],
-                    gradrho_[own],
-                    gradrho_[own],
-                    deltaRLeft
-                );
-                scalar rhoNeighbourLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[nei],
-                    upwindFlux,
-                    rhoMaxValue[nei]-rho_[nei],
-                    rhoMinValue[nei]-rho_[nei],
-                    gradrho_[nei],
-                    gradrho_[nei],
-                    deltaRRight
-                );
-
-                scalar kOwnerLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[own],
-                    upwindFlux,
-                    kMaxValue[own]-k_[own],
-                    kMinValue[own]-k_[own],
-                    gradk_[own],
-                    gradk_[own],
-                    deltaRLeft
-                );
-                scalar kNeighbourLimiter = scalarLimiter.limiter
-                (
-                    cellVolume[nei],
-                    upwindFlux,
-                    kMaxValue[nei]-k_[nei],
-                    kMinValue[nei]-k_[nei],
-                    gradk_[nei],
-                    gradk_[nei],
-                    deltaRRight
-                );
-
-                // find minimal limiter value in each cell
-                pLimiter[own] =
-                    min(pLimiter[own], pOwnerLimiter);
-
-                pLimiter[nei] =
-                    min(pLimiter[nei], pNeighbourLimiter);
-
-                ULimiter[own] =
-                    min(ULimiter[own], UOwnerLimiterV);
-
-                ULimiter[nei] =
-                    min(ULimiter[nei], UNeighbourLimiterV);
-
-//                 TLimiter[own] =
-//                     min(TLimiter[own], TOwnerLimiter);
-// 
-//                 TLimiter[nei] =
-//                     min(TLimiter[nei], TNeighbourLimiter);
-
-                rhoLimiter[own] =
-                    min(rhoLimiter[own], rhoOwnerLimiter);
-
-                rhoLimiter[nei] =
-                    min(rhoLimiter[nei], rhoNeighbourLimiter);
-
-                kLimiter[own] =
-                    min(kLimiter[own], kOwnerLimiter);
-
-                kLimiter[nei] =
-                    min(kLimiter[nei], kNeighbourLimiter);
-            }
-
-            // Update coupled boundary limiters
-            forAll(p_.boundaryField(), patchi)
-            {
-                const fvPatchScalarField& pp = p_.boundaryField()[patchi];
-
-//                 const fvPatchVectorField& pCellCenter = cellCenter.boundaryField()[patchi];
-                const unallocLabelList& faceCells = pp.patch().faceCells();
-
-                if (pp.coupled())
-                {
-                    // cell and face centers
-                    const vectorField delta =  pp.patch().delta();
-//                     const vectorField faceCenter =  pp.patch().Cf();
-//                     const vectorField pCellCenterLeft  =  pCellCenter.patchInternalField();
-
-                    forAll(pp, facei)
-                    {
-                        label own = faceCells[facei];
-
-//                     vector deltaRLeft  = faceCenter[facei] - pCellCenterLeft[facei];
-                        vector deltaRLeft  = delta[facei];
-
-                        // flux dummy
-                        scalar upwindFlux = 1.0;
-
-                        scalar pOwnerLimiter = scalarLimiter.limiter
-                        (
-                            cellVolume[own],
-                            upwindFlux,
-                            pMaxValue[own]-p_[own],
-                            pMinValue[own]-p_[own],
-                            gradp_[own],
-                            gradp_[own],
-                            deltaRLeft
-                        );
-                        vector UOwnerLimiterV = vectorLimiter.limiter
-                        (
-                            cellVolume[own],
-                            upwindFlux,
-                            UMaxValue[own]-U_[own],
-                            UMinValue[own]-U_[own],
-                            gradU_[own],
-                            gradU_[own],
-                            deltaRLeft
-                        );
-//                         scalar TOwnerLimiter = scalarLimiter.limiter
-//                         (
-//                             cellVolume[own],
-//                             upwindFlux,
-//                             TMaxValue[own]-T_[own],
-//                             TMinValue[own]-T_[own],
-//                             gradT_[own],
-//                             gradT_[own],
-//                             deltaRLeft
-//                         );
-                        scalar rhoOwnerLimiter = scalarLimiter.limiter
-                        (
-                            cellVolume[own],
-                            upwindFlux,
-                            rhoMaxValue[own]-rho_[own],
-                            rhoMinValue[own]-rho_[own],
-                            gradrho_[own],
-                            gradrho_[own],
-                            deltaRLeft
-                        );
-                        scalar kOwnerLimiter = scalarLimiter.limiter
-                        (
-                            cellVolume[own],
-                            upwindFlux,
-                            kMaxValue[own]-k_[own],
-                            kMinValue[own]-k_[own],
-                            gradk_[own],
-                            gradk_[own],
-                            deltaRLeft
-                        );
-
-                        pLimiter[own] =
-                            min(pLimiter[own], pOwnerLimiter);
-                        ULimiter[own] =
-                            min(ULimiter[own], UOwnerLimiterV);
-//                         TLimiter[own] =
-//                             min(TLimiter[own], TOwnerLimiter);
-                        rhoLimiter[own] =
-                            min(rhoLimiter[own], rhoOwnerLimiter);
-                        kLimiter[own] =
-                            min(kLimiter[own], kOwnerLimiter);
-                    }
-                }
-//                 else
-//                 {
-//                     forAll(pp, facei)
-//                     {
-//                         label own = faceCells[facei];
-//                         // Calculate minimal limiters
-//                         pLimiter[own] =
-//                             min(pLimiter[own], 1);
-//                         ULimiter[faceCells[facei]] =
-//                             min(ULimiter[own], vector::one);
-//                         TLimiter[faceCells[facei]] =
-//                             min(TLimiter[own], 1);
-//                     }
-//                 }
-            }
-        }
-        else
-        {
-            IStringStream pSchemeData(limiterName);
-            IStringStream USchemeData(limiterName+"V");
-//             IStringStream TSchemeData(limiterName);
-            IStringStream rhoSchemeData(limiterName);
-            IStringStream kSchemeData(limiterName);
-
-            // is working
-            surfaceScalarField pLimiterSurface =
-                limitedSurfaceInterpolationScheme<scalar>::New
-                (
-                    mesh_,
-                    rhoFlux_,
-                    pSchemeData
-                )().limiter(p_);
-
-            surfaceScalarField ULimiterSurface =
-                limitedSurfaceInterpolationScheme<vector>::New
-                (
-                    mesh_,
-                    rhoFlux_,
-                    USchemeData
-                )().limiter(U_);
-
-//             surfaceScalarField TLimiterSurface =
-//                 limitedSurfaceInterpolationScheme<scalar>::New
-//                 (
-//                     mesh_,
-//                     rhoFlux_,
-//                     TSchemeData
-//                 )().limiter(T_);
-
-            surfaceScalarField rhoLimiterSurface =
-                limitedSurfaceInterpolationScheme<scalar>::New
-                (
-                    mesh_,
-                    rhoFlux_,
-                    rhoSchemeData
-                )().limiter(rho_);
-
-            surfaceScalarField kLimiterSurface =
-                limitedSurfaceInterpolationScheme<scalar>::New
-                (
-                    mesh_,
-                    rhoFlux_,
-                    kSchemeData
-                )().limiter(k_);
-
-            // 1D implementation
-            forAll(owner, faceI)
-            {
-                label own = owner[faceI];
-                label nei = neighbour[faceI];
-
-                // find minimal limiter value in each cell
-                pLimiter[own] =
-                    min(pLimiter[own], pLimiterSurface[faceI]);
-
-                pLimiter[nei] =
-                    min(pLimiter[nei], pLimiterSurface[faceI]);
-
-                ULimiter[own] =
-                    min(ULimiter[own], ULimiterSurface[faceI]*vector::one);
-
-                ULimiter[nei] =
-                    min(ULimiter[nei], ULimiterSurface[faceI]*vector::one);
-
-//                 TLimiter[own] =
-//                     min(TLimiter[own], TLimiterSurface[faceI]);
-// 
-//                 TLimiter[nei] =
-//                     min(TLimiter[nei], TLimiterSurface[faceI]);
-
-                rhoLimiter[own] =
-                    min(rhoLimiter[own], rhoLimiterSurface[faceI]);
-
-                rhoLimiter[nei] =
-                    min(rhoLimiter[nei], rhoLimiterSurface[faceI]);
-
-                kLimiter[own] =
-                    min(kLimiter[own], kLimiterSurface[faceI]);
-
-                kLimiter[nei] =
-                    min(kLimiter[nei], kLimiterSurface[faceI]);
-            }
-
-            // Update coupled boundary limiters
-            forAll(p_.boundaryField(), patchi)
-            {
-                const fvPatchScalarField& pp = p_.boundaryField()[patchi];
-                const unallocLabelList& faceCells = pp.patch().faceCells();
-
-                if (pp.coupled())
-                {
-                    forAll(pp, facei)
-                    {
-                        label own = faceCells[facei];
-
-                        pLimiter[own] =
-                            min(pLimiter[own], pLimiterSurface[facei]);
-                        ULimiter[own] =
-                            min(ULimiter[own], ULimiterSurface[facei]*vector::one);
-//                         TLimiter[own] =
-//                             min(TLimiter[own], TLimiterSurface[facei]);
-                        rhoLimiter[own] =
-                            min(rhoLimiter[own], rhoLimiterSurface[facei]);
-                        kLimiter[own] =
-                            min(kLimiter[own], kLimiterSurface[facei]);
-                    }
-                }
-            }
-        }
+        // MultiDimensional Limiters
+//         updateLimiter<scalar,vector,BarthJespersenSlopeMultiLimiter>(p_,gradp_,pLimiter_);
+// //
+        updateLimiter<scalar,vector,VenkatakrishnanSlopeMultiLimiter>(p_,gradp_,pLimiter_,limiterName_);
+        updateLimiter<vector,tensor,VenkatakrishnanSlopeMultiLimiter>(U_,gradU_,ULimiter_,limiterName_+"V");
+        updateLimiter<scalar,vector,VenkatakrishnanSlopeMultiLimiter>(rho_,gradrho_,rhoLimiter_,limiterName_);
+        updateLimiter<scalar,vector,VenkatakrishnanSlopeMultiLimiter>(k_,gradk_,kLimiter_,limiterName_);
     }
 
-    // o.b. An update of the boundary conditions for
-    // the limiter values seems to be needed for coupled patches
-    pLimiter.correctBoundaryConditions();
-    ULimiter.correctBoundaryConditions();
-//     TLimiter.correctBoundaryConditions();
-    rhoLimiter.correctBoundaryConditions();
-    kLimiter.correctBoundaryConditions();
+//     boundMinMax(pLimiter_,dimensionedScalar(0.0),dimensionedScalar(1.0));
+//     boundMinMax(ULimiter_[0],dimensionedScalar(0.0),dimensionedScalar(1.0));
+//     boundMinMax(rhoLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
 
-//     boundMinMax(pLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
-//     boundMinMax(ULimiter[0],dimensionedScalar(0.0),dimensionedScalar(1.0));
-//     boundMinMax(TLimiter,dimensionedScalar(0.0),dimensionedScalar(1.0));
-
-//     Info << "max(pLimiter) "  << max(pLimiter.internalField())
-//          << " min(pLimiter) " << min(pLimiter.internalField())  << endl;
-//     Info << "max(ULimiter) "  << max(ULimiter.internalField())
-//          << " min(ULimiter) " << min(ULimiter.internalField())  << endl;
-// //     Info << "max(TLimiter) "  << max(TLimiter.internalField())
-// //          << " min(TLimiter) " << min(TLimiter.internalField())  << endl;
-//     Info << "max(rhoLimiter) "  << max(rhoLimiter.internalField())
-//          << " min(rhoLimiter) " << min(rhoLimiter.internalField())  << endl;
-//     Info << "max(kLimiter) "  << max(kLimiter.internalField())
-//          << " min(kLimiter) " << min(kLimiter.internalField())  << endl;
+//     Info << "max(pLimiter_) "  << max(pLimiter_.internalField())
+//          << " min(pLimiter_) " << min(pLimiter_.internalField())  << endl;
+//     Info << "max(ULimiter_) "  << max(ULimiter_.internalField())
+//          << " min(ULimiter_) " << min(ULimiter_.internalField())  << endl;
+//     Info << "max(rhoLimiter_) "  << max(rhoLimiter_.internalField())
+//          << " min(rhoLimiter_) " << min(rhoLimiter_.internalField())  << endl;
+//     Info << "max(kLimiter_) "  << max(kLimiter_.internalField())
+//          << " min(kLimiter_) " << min(kLimiter_.internalField())  << endl;
 
     // Calculate fluxes at internal faces
-    forAll(owner, faceI)
+    forAll(owner_, faceI)
     {
-        label own = owner[faceI];
-        label nei = neighbour[faceI];
+        label own = owner_[faceI];
+        label nei = neighbour_[faceI];
 
-        vector deltaRLeft  = faceCenter[faceI] - cellCenter[own];
-        vector deltaRRight = faceCenter[faceI] - cellCenter[nei];
+        vector deltaRLeft  = faceCenter_[faceI] - cellCenter_[own];
+        vector deltaRRight = faceCenter_[faceI] - cellCenter_[nei];
 
         // calculate fluxes with reconstructed primitive variables at faces
         // TODO: thermophysical variables are not reconstructed at faces!!!
@@ -898,58 +531,26 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             rhoFlux_[faceI],
             rhoUFlux_[faceI],
             rhoEFlux_[faceI],
-//             p_[own],      // left p
-//             p_[nei],      // right p
-//             U_[own],      // left U
-//             U_[nei],      // right U
-//             T_[own],      // left T
-//             T_[nei],      // right T
-//
-//             max(p_[own] + secondOrder*pLimiter[own]*(gradp_[own] & deltaRLeft),pMin.value()), // reconstructed left p
-//             max(p_[nei] + secondOrder*pLimiter[nei]*(gradp_[nei] & deltaRRight),pMin.value()),// reconstructed right p
-//
-            p_[own] + secondOrder*pLimiter[own]*(gradp_[own] & deltaRLeft), // reconstructed left p
-            p_[nei] + secondOrder*pLimiter[nei]*(gradp_[nei] & deltaRRight),// reconstructed right p
-//
-//             U_[own] + pLimiter[own] * (deltaRLeft & gradU_[own]), // reconstructed left U
-//             U_[nei] + pLimiter[nei] * (deltaRRight & gradU_[nei]),// reconstructed right U
-//             T_[own] + pLimiter[own] * (gradT_[own] & deltaRLeft), // reconstructed left T
-//             T_[nei] + pLimiter[nei] * (gradT_[nei] & deltaRRight),// reconstructed right T
-//
-            U_[own] + secondOrder*cmptMultiply(ULimiter[own],(deltaRLeft & gradU_[own])), // reconstructed left U
-            U_[nei] + secondOrder*cmptMultiply(ULimiter[nei],(deltaRRight & gradU_[nei])),// reconstructed right U
+            p_[own] + secondOrder*pLimiter_[own]*(deltaRLeft  & gradp_[own]), // reconstructed left p
+            p_[nei] + secondOrder*pLimiter_[nei]*(deltaRRight & gradp_[nei]), // reconstructed right p
+            U_[own] + secondOrder*cmptMultiply(ULimiter_[own],(deltaRLeft  & gradU_[own])), // reconstructed left U
+            U_[nei] + secondOrder*cmptMultiply(ULimiter_[nei],(deltaRRight & gradU_[nei])), // reconstructed right U
 //
 //          using minimum component scalar limiter
-//             U_[own] + secondOrder*cmptMin(ULimiter[own])*(deltaRLeft & gradU_[own]), // reconstructed left U
-//             U_[nei] + secondOrder*cmptMin(ULimiter[nei])*(deltaRRight & gradU_[nei]),// reconstructed right U
+//             U_[own] + secondOrder*cmptMin(ULimiter_[own])*(deltaRLeft & gradU_[own]),  // reconstructed left U
+//             U_[nei] + secondOrder*cmptMin(ULimiter_[nei])*(deltaRRight & gradU_[nei]), // reconstructed right U
 //
-//             U_[own] + secondOrder*ULimiter[own]*(deltaRLeft & gradU_[own]), // reconstructed left U
-//             U_[nei] + secondOrder*ULimiter[nei]*(deltaRRight & gradU_[nei]),// reconstructed right U
-//
-//             max(T_[own] + secondOrder*TLimiter[own]*(gradT_[own] & deltaRLeft),TMin.value()), // reconstructed left T
-//             max(T_[nei] + secondOrder*TLimiter[nei]*(gradT_[nei] & deltaRRight),TMin.value()),// reconstructed right T
-//
-//             T_[own] + secondOrder*TLimiter[own]*(gradT_[own] & deltaRLeft), // reconstructed left T
-//             T_[nei] + secondOrder*TLimiter[nei]*(gradT_[nei] & deltaRRight),// reconstructed right T
-//
-            rho_[own] + secondOrder*rhoLimiter[own]*(gradrho_[own] & deltaRLeft), // reconstructed left T
-            rho_[nei] + secondOrder*rhoLimiter[nei]*(gradrho_[nei] & deltaRRight),// reconstructed right T
-//
-            k_[own] + secondOrder*kLimiter[own]*(gradk_[own] & deltaRLeft),
-            k_[nei] + secondOrder*kLimiter[nei]*(gradk_[nei] & deltaRRight),
-// //
-//             R_[own],        // left R
-//             R_[nei],        // right R
-//             Cv_[own],       // left Cv
-//             Cv_[nei],       // right Cv
+            rho_[own] + secondOrder*rhoLimiter_[own]*(deltaRLeft  & gradrho_[own]), // reconstructed left rho
+            rho_[nei] + secondOrder*rhoLimiter_[nei]*(deltaRRight & gradrho_[nei]), // reconstructed right rho
+            k_[own] + secondOrder*kLimiter_[own]*(deltaRLeft  & gradk_[own]),
+            k_[nei] + secondOrder*kLimiter_[nei]*(deltaRRight & gradk_[nei]),
 // //
             kappa_[own],       // left kappa
             kappa_[nei],       // right kappa
-// //
             Sf[faceI],      // face vector
             magSf[faceI],   // face area
             dotX_[faceI],    // face velocity
-            Konstant
+            Konstant_
         );
     }
 
@@ -962,33 +563,29 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
 
         const fvPatchScalarField& pp = p_.boundaryField()[patchi];
         const fvPatchVectorField& pU = U_.boundaryField()[patchi];
-//         const fvPatchScalarField& pT = T_.boundaryField()[patchi];
         const fvPatchScalarField& prho = rho_.boundaryField()[patchi];
         const fvPatchScalarField& pk = k_.boundaryField()[patchi];
 
         const fvPatchVectorField& pGradp = gradp_.boundaryField()[patchi];
         const fvPatchTensorField& pGradU = gradU_.boundaryField()[patchi];
-//         const fvPatchVectorField& pGradT = gradT_.boundaryField()[patchi];
         const fvPatchVectorField& pGradrho = gradrho_.boundaryField()[patchi];
         const fvPatchVectorField& pGradk = gradk_.boundaryField()[patchi];
 
-//         const fvPatchScalarField& pCv = Cv_.boundaryField()[patchi];
-//         const fvPatchScalarField& pR = R_.boundaryField()[patchi];
         const fvPatchScalarField& pkappa = kappa_.boundaryField()[patchi];
 
         const fvsPatchVectorField& pSf = Sf.boundaryField()[patchi];
         const fvsPatchScalarField& pMagSf = magSf.boundaryField()[patchi];
         const fvsPatchVectorField& pDotX = dotX_.boundaryField()[patchi];
 
-        const fvPatchVectorField& pCellCenter = cellCenter.boundaryField()[patchi];
+        const fvPatchVectorField& pCellCenter = cellCenter_.boundaryField()[patchi];
 //         const fvsPatchVectorField& pFaceCenter = faceCenter.boundaryField()[patchi];
 
-        const fvPatchScalarField& ppLimiter = pLimiter.boundaryField()[patchi];
-        const fvPatchVectorField& pULimiter = ULimiter.boundaryField()[patchi];
-//         const fvPatchScalarField& pTLimiter = TLimiter.boundaryField()[patchi];
-        const fvPatchScalarField& prhoLimiter = rhoLimiter.boundaryField()[patchi];
-        const fvPatchScalarField& pkLimiter = kLimiter.boundaryField()[patchi];
+        const fvPatchScalarField& ppLimiter = pLimiter_.boundaryField()[patchi];
+        const fvPatchVectorField& pULimiter = ULimiter_.boundaryField()[patchi];
+        const fvPatchScalarField& prhoLimiter = rhoLimiter_.boundaryField()[patchi];
+        const fvPatchScalarField& pkLimiter = kLimiter_.boundaryField()[patchi];
 
+        // special treatment at coupled boundaries
         if (pp.coupled())
         {
             // primitive variables
@@ -997,9 +594,6 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
 
             const vectorField pULeft  = pU.patchInternalField();
             const vectorField pURight = pU.patchNeighbourField();
-
-//             const scalarField pTLeft  = pT.patchInternalField();
-//             const scalarField pTRight = pT.patchNeighbourField();
 
             const scalarField prhoLeft  = prho.patchInternalField();
             const scalarField prhoRight = prho.patchNeighbourField();
@@ -1017,9 +611,6 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             const tensorField pGradULeft  = pGradU.patchInternalField();
             const tensorField pGradURight = pGradU.patchNeighbourField();
 
-//             const vectorField pGradTLeft  = pGradT.patchInternalField();
-//             const vectorField pGradTRight = pGradT.patchNeighbourField();
-
             const vectorField pGradrhoLeft  = pGradrho.patchInternalField();
             const vectorField pGradrhoRight = pGradrho.patchNeighbourField();
 
@@ -1033,9 +624,6 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             vectorField pULimiterLeft  = pULimiter.patchInternalField();
             vectorField pULimiterRight = pULimiter.patchNeighbourField();
 
-//             scalarField pTLimiterLeft  = pTLimiter.patchInternalField();
-//             scalarField pTLimiterRight = pTLimiter.patchNeighbourField();
-
             scalarField prhoLimiterLeft  = prhoLimiter.patchInternalField();
             scalarField prhoLimiterRight = prhoLimiter.patchNeighbourField();
 
@@ -1048,119 +636,77 @@ void Foam::godunovFlux<Flux>::update(Switch secondOrder)
             const vectorField pCellCenterLeft  =  pCellCenter.patchInternalField();
             const vectorField pCellCenterRight =  pCellCenter.patchNeighbourField();
 
-            forAll(pp, facei)
+            forAll(pp, faceI)
             {
-                vector deltaRLeft  = faceCenter[facei] - pCellCenterLeft[facei];
-                vector deltaRRight = faceCenter[facei] - pCellCenterRight[facei];
+                vector deltaRLeft  = faceCenter[faceI] - pCellCenterLeft[faceI];
+                vector deltaRRight = faceCenter[faceI] - pCellCenterRight[faceI];
 
                 // bound the limiters between 0 and 1 in order to prevent problems due to interpolations
+                ppLimiterLeft[faceI]   = max(min(ppLimiterLeft[faceI],1.0),0.0);
+                ppLimiterRight[faceI]  = max(min(ppLimiterRight[faceI],1.0),0.0);
 
-                ppLimiterLeft[facei]   = max(min(ppLimiterLeft[facei],1.0),0.0);
-                ppLimiterRight[facei]  = max(min(ppLimiterRight[facei],1.0),0.0);
+                pULimiterLeft[faceI]  = max(min(pULimiterLeft[faceI],vector::one),vector::zero);
+                pULimiterRight[faceI] = max(min(pULimiterRight[faceI],vector::one),vector::zero);
 
-                pULimiterLeft[facei]  = max(min(pULimiterLeft[facei],vector::one),vector::zero);
-                pULimiterRight[facei] = max(min(pULimiterRight[facei],vector::one),vector::zero);
+                prhoLimiterLeft[faceI]   = max(min(prhoLimiterLeft[faceI],1.0),0.0);
+                prhoLimiterRight[faceI]  = max(min(prhoLimiterRight[faceI],1.0),0.0);
 
-//                 pTLimiterLeft[facei]   = max(min(pTLimiterLeft[facei],1.0),0.0);
-//                 pTLimiterRight[facei]  = max(min(pTLimiterRight[facei],1.0),0.0);
-
-                prhoLimiterLeft[facei]   = max(min(prhoLimiterLeft[facei],1.0),0.0);
-                prhoLimiterRight[facei]  = max(min(prhoLimiterRight[facei],1.0),0.0);
-
-                pkLimiterLeft[facei]   = max(min(pkLimiterLeft[facei],1.0),0.0);
-                pkLimiterRight[facei]  = max(min(pkLimiterRight[facei],1.0),0.0);
+                pkLimiterLeft[faceI]   = max(min(pkLimiterLeft[faceI],1.0),0.0);
+                pkLimiterRight[faceI]  = max(min(pkLimiterRight[faceI],1.0),0.0);
 
                 // Calculate fluxes at coupled boundary faces
                 Flux::evaluateFlux
                 (
-                    pRhoFlux[facei],
-                    pRhoUFlux[facei],
-                    pRhoEFlux[facei],
+                    pRhoFlux[faceI],
+                    pRhoUFlux[faceI],
+                    pRhoEFlux[faceI],
+                    ppLeft[faceI]  + secondOrder*ppLimiterLeft[faceI] *(deltaRLeft  & pGradpLeft[faceI]),                // face p
+                    ppRight[faceI] + secondOrder*ppLimiterRight[faceI]*(deltaRRight & pGradpRight[faceI]),               // face p
+                    pULeft[faceI]  + secondOrder*cmptMultiply(pULimiterLeft[faceI] ,(deltaRLeft  & pGradULeft[faceI])),  // face U
+                    pURight[faceI] + secondOrder*cmptMultiply(pULimiterRight[faceI],(deltaRRight & pGradURight[faceI])), // face U
 //
-//                     ppLeft[facei],    // face p
-//                     ppRight[facei],   // face p
-//                     pULeft[facei],    // face U
-//                     pURight[facei],   // face U
-//                     pTLeft[facei],    // face T
-//                     pTRight[facei],   // face T
-//                     pkLeft[facei],    // face k
-//                     pkRight[facei],   // face k
+//                     pULeft[faceI]  + secondOrder*cmptMin(pULimiterLeft[faceI])*(deltaRLeft & pGradULeft[faceI]),      // face U
+//                     pURight[faceI] + secondOrder*cmptMin(pULimiterRight[faceI])*(deltaRRight & pGradURight[faceI]),   // face U
 //
-// //                     max(ppLeft[facei]  + secondOrder*ppLimiterLeft[facei]*(pGradpLeft[facei] & deltaRLeft),pMin.value()),                  // face p
-// //                     max(ppRight[facei] + secondOrder*ppLimiterRight[facei]*(pGradpRight[facei] & deltaRRight),pMin.value()),               // face p
-//
-                    ppLeft[facei]  + secondOrder*ppLimiterLeft[facei]*(pGradpLeft[facei] & deltaRLeft),                  // face p
-                    ppRight[facei] + secondOrder*ppLimiterRight[facei]*(pGradpRight[facei] & deltaRRight),               // face p
+                    prhoLeft[faceI]  + secondOrder*prhoLimiterLeft[faceI] *(deltaRLeft  & pGradrhoLeft[faceI]),          // face rho
+                    prhoRight[faceI] + secondOrder*prhoLimiterRight[faceI]*(deltaRRight & pGradrhoRight[faceI]),         // face rho
+                    pkLeft[faceI]  + secondOrder*pkLimiterLeft[faceI] *(deltaRLeft  & pGradkLeft[faceI]),                // face k
+                    pkRight[faceI] + secondOrder*pkLimiterRight[faceI]*(deltaRRight & pGradkRight[faceI]),               // face k
 // //
-                    pULeft[facei]  + secondOrder*cmptMultiply(pULimiterLeft[facei],(deltaRLeft & pGradULeft[facei])),    // face U
-                    pURight[facei] + secondOrder*cmptMultiply(pULimiterRight[facei],(deltaRRight & pGradURight[facei])), // face U
-// //
-//                     pULeft[facei]  + secondOrder*cmptMin(pULimiterLeft[facei])*(deltaRLeft & pGradULeft[facei]),    // face U
-//                     pURight[facei] + secondOrder*cmptMin(pULimiterRight[facei])*(deltaRRight & pGradURight[facei]), // face U
-// //
-//                     max(pTLeft[facei]  + secondOrder*pTLimiterLeft[facei]*(pGradTLeft[facei] & deltaRLeft),TMin.value()),    // face T
-//                     max(pTRight[facei] + secondOrder*pTLimiterRight[facei]*(pGradTRight[facei] & deltaRRight),TMin.value()), // face T
-//
-//                     pTLeft[facei]  + secondOrder*pTLimiterLeft[facei] *(pGradTLeft[facei]  & deltaRLeft),                 // face T
-//                     pTRight[facei] + secondOrder*pTLimiterRight[facei]*(pGradTRight[facei] & deltaRRight),               // face T
-//
-                    prhoLeft[facei]  + secondOrder*prhoLimiterLeft[facei] *(pGradrhoLeft[facei]  & deltaRLeft),                 // face T
-                    prhoRight[facei] + secondOrder*prhoLimiterRight[facei]*(pGradrhoRight[facei] & deltaRRight),               // face T
-//
-                    pkLeft[facei]  + secondOrder*pkLimiterLeft[facei]*(pGradkLeft[facei] & deltaRLeft),                 // face T
-                    pkRight[facei] + secondOrder*pkLimiterRight[facei]*(pGradkRight[facei] & deltaRRight),               // face T
-// //
-//                     pR[facei],        // face R
-//                     pR[facei],        // face R
-//                     pCv[facei],       // face Cv
-//                     pCv[facei],       // face Cv
-// //
-                    pkappaLeft[facei],       // face kappa
-                    pkappaRight[facei],       // face kappa
-// //
-                    pSf[facei],       // face vector
-                    pMagSf[facei],    // face area
-                    pDotX[facei],      // face velocity
-                    Konstant
+                    pkappaLeft[faceI],  // face kappa
+                    pkappaRight[faceI], // face kappa
+                    pSf[faceI],         // face vector
+                    pMagSf[faceI],      // face area
+                    pDotX[faceI],       // face velocity
+                    Konstant_
                 );
             }
         }
         else
         {
-            forAll(pp, facei)
+            forAll(pp, faceI)
             {
                 // Calculate fluxes at boundary faces
                 Flux::evaluateFlux
                 (
-                    pRhoFlux[facei],
-                    pRhoUFlux[facei],
-                    pRhoEFlux[facei],
-                    pp[facei],        // face p
-                    pp[facei],        // face p
-                    pU[facei],        // face U
-                    pU[facei],        // face U
+                    pRhoFlux[faceI],
+                    pRhoUFlux[faceI],
+                    pRhoEFlux[faceI],
+                    pp[faceI],        // face p
+                    pp[faceI],        // face p
+                    pU[faceI],        // face U
+                    pU[faceI],        // face U
+                    prho[faceI],      // face rho
+                    prho[faceI],      // face rho
+                    pk[faceI],        // face k
+                    pk[faceI],        // face k
 // //
-//                     pT[facei],        // face T
-//                     pT[facei],        // face T
-// //
-                    prho[facei],        // face T
-                    prho[facei],        // face T
-// //
-                    pk[facei],        // face k
-                    pk[facei],        // face k
-// //
-//                     pR[facei],        // face R
-//                     pR[facei],        // face R
-//                     pCv[facei],       // face Cv
-//                     pCv[facei],       // face Cv
-// //
-                    pkappa[facei],       // face kappa
-                    pkappa[facei],       // face kappa
-// //
-                    pSf[facei],       // face vector
-                    pMagSf[facei],    // face area
-                    pDotX[facei],      // face velocity
-                    Konstant
+                    pkappa[faceI],    // face kappa
+                    pkappa[faceI],    // face kappa
+                    pSf[faceI],       // face vector
+                    pMagSf[faceI],    // face area
+                    pDotX[faceI],     // face velocity
+                    Konstant_
                 );
             }
         }

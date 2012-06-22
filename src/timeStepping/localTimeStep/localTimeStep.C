@@ -66,30 +66,21 @@ Foam::localTimeStep::localTimeStep
         dimensionedScalar("CoDeltaT", dimTime, 0.1),
         zeroGradientFvPatchScalarField::typeName
     ),
-    deltaX_
+    deltaS_
     (
         IOobject
         (
-            "deltaX",
-            mesh_.time().timeName(),
-            mesh_,
+            "deltaS",
+            mesh().time().timeName(),
+            mesh(),
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
         mesh(),
-        dimensionedScalar("deltaX", dimLength, SMALL),
-        zeroGradientFvPatchScalarField::typeName
-    )
-{
-    updateDeltaX();
-};
-
-void localTimeStep::updateDeltaX()
-{
-    const unallocLabelList& owner = mesh().owner();
-    const unallocLabelList& neighbour = mesh().neighbour();
-/*
-    volScalarField cellVolume
+        dimensionedVector("deltaS", dimArea, vector::one),
+        zeroGradientFvPatchVectorField::typeName
+    ),
+    cellVolume_
     (
         IOobject
         (
@@ -100,173 +91,54 @@ void localTimeStep::updateDeltaX()
             IOobject::NO_WRITE
         ),
         mesh(),
-        dimVolume,
+        dimensionedScalar("cellVolume", dimVolume, 0.1),
         zeroGradientFvPatchScalarField::typeName
-    );
+    )
+{
+    updateDeltaX();
+};
 
-    cellVolume.internalField() = mesh().V();
-    cellVolume.correctBoundaryConditions();
+void localTimeStep::updateDeltaX()
+{
+    const unallocLabelList& owner = mesh().owner();
+    const unallocLabelList& neighbour = mesh().neighbour();
 
-    volScalarField maxFaceArea
-    (
-        IOobject
-        (
-            "maxFaceArea",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedScalar("maxFaceArea", dimArea, 0.0),
-        zeroGradientFvPatchScalarField::typeName
-    );
-
-    const surfaceScalarField& faceAreas = mesh().magSf();
-
-    // compute maximum face area for each cell from the internal faces
-    forAll(owner, facei)
-    {
-        maxFaceArea[owner[facei]] =
-            max(maxFaceArea[owner[facei]], faceAreas[facei]);
-
-        maxFaceArea[neighbour[facei]] =
-            max(maxFaceArea[neighbour[facei]], faceAreas[facei]);
-    }
-
-    // compute maximum face area for each cell from the boundary faces
-    forAll(maxFaceArea.boundaryField(), patchi)
-    {
-        const fvsPatchScalarField& pfaceArea =
-            faceAreas.boundaryField()[patchi];
-
-        const fvPatch& p = pfaceArea.patch();
-        const unallocLabelList& faceCells = p.patch().faceCells();
-
-        forAll(pfaceArea, patchFacei)
-        {
-            maxFaceArea[faceCells[patchFacei]] = max
-            (
-                maxFaceArea[faceCells[patchFacei]],
-                pfaceArea[patchFacei]
-            );
-        }
-    }
-
-    // update boundary conditons for boundary faces
-    maxFaceArea.correctBoundaryConditions();
-
-    // compute characteristic length for each cell
-    deltaX_ = cellVolume/maxFaceArea;
-    deltaX_.correctBoundaryConditions();
-*/
-//     volScalarField deltaXVol(cellVolume/maxFaceArea);
-//     deltaXVol.rename("deltaXVol");
-//     deltaXVol.write();
-
-    // new formulation for deltaX
-    const volVectorField& cellCenter = mesh().C();
-    const surfaceVectorField& faceCenter = mesh().Cf();
+    // new formulation for deltaX according to Blazek
 
     // Get the face area vector
     const surfaceVectorField& Sf = mesh_.Sf();
-    const surfaceScalarField& magSf = mesh_.magSf();
 
-    volScalarField deltaX
-    (
-        IOobject
-        (
-            "deltaXEdge",
-            mesh().time().timeName(),
-            mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh(),
-        dimensionedScalar("deltaXEdge", dimLength, HUGE),
-        zeroGradientFvPatchScalarField::typeName
-    );
+    // Reset values
+    deltaS_ = dimensionedVector("deltaS", dimArea, vector::zero);
+    cellVolume_.internalField() = mesh().V();
+    cellVolume_.correctBoundaryConditions();
 
     forAll(owner, faceI)
     {
         label own = owner[faceI];
         label nei = neighbour[faceI];
 
-        vector normal = Sf[faceI]/magSf[faceI];
-
-        deltaX[own] =
-            min(deltaX[own], mag((faceCenter[faceI]-cellCenter[own]) & normal));
-
-        deltaX[nei] =
-            min(deltaX[nei], mag((faceCenter[faceI]-cellCenter[nei]) & normal));
+        deltaS_[own] += 0.5*cmptMag(Sf[faceI]);
+        deltaS_[nei] += 0.5*cmptMag(Sf[faceI]);
     }
 
-    forAll(deltaX.boundaryField(), patchI)
+    forAll(deltaS_.boundaryField(), patchI)
     {
-
-        const fvPatchScalarField& pp = deltaX.boundaryField()[patchI];
-        const vectorField pFaceCenter = pp.patch().Cf();
+        const fvPatchVectorField& pp = deltaS_.boundaryField()[patchI];
 
         const fvsPatchVectorField& pSf = Sf.boundaryField()[patchI];
-        const fvsPatchScalarField& pMagSf = magSf.boundaryField()[patchI];
 
         const unallocLabelList& faceCells =  pp.patch().faceCells();
 
-        forAll(pp, facei)
+        forAll(pp, faceI)
         {
-            vector normal = pSf[facei]/pMagSf[facei];
+            label own = faceCells[faceI];
 
-            label own = faceCells[facei];
-
-            deltaX[own] = min
-            (
-                deltaX[own],
-                mag((pFaceCenter[facei]-cellCenter[own]) & normal)
-            );
+            deltaS_[own] += 0.5*cmptMag(pSf[faceI]);
         }
     }
 
-
-//     forAll(owner, faceI)
-//     {
-//         label own = owner[faceI];
-//         label nei = neighbour[faceI];
-// 
-// //         scalar deltaLLeft  = mag(faceCenter[faceI] - cellCenter[own]);
-// //         scalar deltaLRight = mag(faceCenter[faceI] - cellCenter[nei]);
-// //         scalar deltaL = mag(fcellCenter[nei] - cellCenter[own]);
-// 
-//         deltaX[own] =
-//             min(deltaX[own], mag(faceCenter[faceI]-cellCenter[own]));
-// 
-//         deltaX[nei] =
-//             min(deltaX[nei], mag(faceCenter[faceI]-cellCenter[nei]));
-//     }
-// 
-//     forAll(deltaX.boundaryField(), patchI)
-//     {
-//         const fvsPatchVectorField& pFaceCenter =
-//             faceCenter.boundaryField()[patchI];
-// 
-//         const fvPatch& p = pFaceCenter.patch();
-//         const unallocLabelList& faceCells = p.patch().faceCells();
-// 
-//         forAll(pFaceCenter, patchFaceI)
-//         {
-//             label cellI = faceCells[patchFaceI];
-//             deltaX[cellI] = min
-//             (
-//                 deltaX[cellI],
-//                 mag(pFaceCenter[patchFaceI]-cellCenter[cellI])
-//             );
-//         }
-//     }
-
-    deltaX.correctBoundaryConditions();
-//     deltaX.write();
-    deltaX_ = deltaX;
-    deltaX_.correctBoundaryConditions();
-
+    deltaS_.correctBoundaryConditions();
 };
 
 void localTimeStep::update(scalar maxCo, Switch adjustTimeStep)
@@ -275,40 +147,29 @@ void localTimeStep::update(scalar maxCo, Switch adjustTimeStep)
     {
         updateDeltaX();
     }
-
+    
+    // square of speed of sound for ideal gases
     volScalarField speedOfSound = thermophysicalModel_.Cp()/
         (thermophysicalModel_.Cv()*thermophysicalModel_.psi());
-
     dimensionedScalar minVelocity("UMin", U_.dimensions(), SMALL);
-
     bound(speedOfSound,minVelocity);
 
-    // compute the maximum inviscid deltaT
-    volScalarField deltaTInvis
-    (
-       deltaX_/(mag(U_)+sqrt(speedOfSound))
-    );
+    // constant for viscous time step is hard coded for the moment
+    scalar constantC = 4.0;
 
     if ( max(turbulenceModel_.muEff()).value() > SMALL )
     {
-        // compute the maximum viscous deltaT
-        volScalarField deltaTVis
-        (
-            sqr(deltaX_)*thermophysicalModel_.rho()/turbulenceModel_.muEff()
-        );
-
-        // blend both time step values and limit them with the given
-        // maximum CFL number, has only some influence if both timesteps are in the same order
-        // otherwise it is almost the smaller one of both
-        // This timestep is always smaller than the min() of both
-        // cf. Arnone et al.
-        CoDeltaT_ = maxCo*(deltaTVis*deltaTInvis)/(deltaTVis+deltaTInvis);
-        // cf. Weiss and Smith
-//         CoDeltaT_ = maxCo*min(deltaTVis,deltaTInvis);
+        CoDeltaT_
+            = maxCo*cellVolume_/(((U_+sqrt(speedOfSound)*vector::one) & deltaS_) 
+            + constantC
+            *max(4./3.,thermophysicalModel_.Cp()/thermophysicalModel_.Cv())
+            *turbulenceModel_.alphaEff()
+            *magSqr(deltaS_)/(thermophysicalModel_.rho()*cellVolume_) );
     }
     else
     {
-        CoDeltaT_ = maxCo*deltaTInvis;
+        CoDeltaT_ 
+            = maxCo*cellVolume_/((U_+sqrt(speedOfSound)*vector::one) & deltaS_);
     }
 
     if (adjustTimeStep)
