@@ -3,11 +3,7 @@ SlopeLimiter/BarthJespersenSlope/BarthJespersenSlope.C
 SlopeLimiter/MinmodSlope/MinmodSlope.C
 SlopeLimiter/vanAlbadaSlope/vanAlbadaSlope.C
 SlopeLimiter/vanLeerSlope/vanLeerSlope.C
-SlopeLimiter/superBeeSlope/superBeeSlope.C
 
-roeALEFlux/roeALEFlux.C
-rusanovALEFlux/rusanovALEFlux.C
-hllcALEFlux/hllcALEFlux.C
-AUSMplusALEFlux/AUSMplusALEFlux.C
+roeMultiDensityALEFlux/roeMultiDensityALEFlux.C
 
 LIB = $(FOAM_USER_LIBBIN)/libGodunovFlux

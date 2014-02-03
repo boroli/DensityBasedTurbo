@@ -317,7 +317,7 @@ EulerLocalDdtScheme<Type>::fvmDdt
     fvMatrix<Type>& fvm = tfvm();
 
     scalarField rDeltaT =
-        1.0/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
+        scalar(1.0)/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
 
     fvm.diag() = rDeltaT*mesh().V();
 
@@ -359,7 +359,7 @@ EulerLocalDdtScheme<Type>::fvmDdt
     fvMatrix<Type>& fvm = tfvm();
 
     scalarField rDeltaT =
-        1.0/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
+        scalar(1.0)/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
 
     fvm.diag() = rDeltaT*rho.value()*mesh().V();
 
@@ -403,7 +403,7 @@ EulerLocalDdtScheme<Type>::fvmDdt
     fvMatrix<Type>& fvm = tfvm();
 
     scalarField rDeltaT =
-        1.0/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
+        scalar(1.0)/(beta[0]*registry.lookupObject<volScalarField>(deltaTauName_).internalField());
 
     fvm.diag() = rDeltaT*rho.internalField()*mesh().V();
 

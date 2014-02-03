@@ -79,21 +79,6 @@ Foam::localTimeStep::localTimeStep
         mesh(),
         dimensionedScalar("deltaX", dimLength, SMALL),
         zeroGradientFvPatchScalarField::typeName
-    ),
-
-    deltaTVisOverDeltaTInv_
-    (
-        IOobject
-        (
-            "deltaTVisOverDeltaTInv",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        (sqr(deltaX_)*thermophysicalModel_.rho()/turbulenceModel_.muEff())
-        /(deltaX_/(mag(U)+sqrt(thermophysicalModel_.Cp()/(thermophysicalModel_.Cv()
-            *thermophysicalModel_.psi()))))
     )
 
 
@@ -320,11 +305,11 @@ void localTimeStep::update(scalar maxCo, Switch adjustTimeStep)
         // otherwise it is almost the smaller one of both
         // This timestep is always smaller than the min() of both
         // cf. Arnone et al.
-         CoDeltaT_ = maxCo*(deltaTVis*deltaTInvis)/(deltaTVis+deltaTInvis);
+//         CoDeltaT_ = maxCo*(deltaTVis*deltaTInvis)/(deltaTVis+deltaTInvis);
         // cf. Weiss and Smith
-//         CoDeltaT_ = maxCo*min(deltaTVis,deltaTInvis);
+         CoDeltaT_ = maxCo*min(deltaTVis,deltaTInvis);
+	 CoDeltaT_.correctBoundaryConditions();
 
-    deltaTVisOverDeltaTInv_ = deltaTVis/deltaTInvis;
     }
     
 //dimensionedScalar tMin("tMin", dimTime, 2.0e-7);
@@ -333,6 +318,7 @@ void localTimeStep::update(scalar maxCo, Switch adjustTimeStep)
     else
     {
         CoDeltaT_ = maxCo*deltaTInvis;
+	CoDeltaT_.correctBoundaryConditions();
     }
 
     if (adjustTimeStep)

@@ -29,9 +29,6 @@ Description
     Class with limiter function which returns the limiter
     BarthJespersenSlopeMulti
 
-    Blazek, Jiri. "Computational Fluid Dynamics: Principles and Applications",
-    2001, Referex Engineering, Elsevier
-
 Author
     Oliver Borm  All rights reserved.
 
@@ -87,7 +84,7 @@ public:
         const vector& d
     )
     {
-        return limiter(cellVolume,deltaOneMax,deltaOneMin,gradPhiP & d);
+        return limiter(cellVolume,deltaOneMax,deltaOneMin, d & gradPhiP);
     }
 
     inline vector limiter

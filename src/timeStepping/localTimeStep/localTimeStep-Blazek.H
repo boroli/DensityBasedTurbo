@@ -30,17 +30,12 @@ Description
     does not exceed the specified value.
 
     References:
-    Weiss, Jonathan M. and Wayne A. Smith, "Preconditioning Applied to Variable
-    and Constant Density Flows." AIAA Journal 33/11 (November 1995): 2050–2057.
-
-    Arnone, Liou and Povinelli, "Multigrid Time-Accurate Integration of
-    Navier-Stokes Equations" AIAA 1993-3361, NASA-TM-106373
-
-    Mavriplis, D.J., Jameson, A. and Martinelli, L., "Multigrid Solution of the
-    Navier-Stokes Equations on Triangular Meshes." AIAA-89-0120
+    J. Blazek, "Computational Fluid Dynamics: Principles and Applications",
+    Ch. 6.1, p.190, Elsevier, 2005
 
 Author
     Oliver Borm  All rights reserved.
+    Sebastian Saegeler  All rights reserved.
 
 SourceFiles
     localTimeStep.C
@@ -88,9 +83,18 @@ class localTimeStep
        //- CFL number limited local time step field
        volScalarField CoDeltaT_;
 
-       //- characteristic length scale
-       volScalarField deltaX_;
+       //- inviscid spectral radius
+       volScalarField deltaT_inv;
 
+       //- viscous spectral radius
+       volScalarField deltaT_vis;
+
+       //- maximum alowable time step in each cell
+       volScalarField maxDeltaT_;
+       
+       volScalarField maxDeltaTFluent_;       
+
+       
 
     // Private Member Functions
 
@@ -129,12 +133,10 @@ public:
             return CoDeltaT_;
         }
 
-        //- Update the characteristic length scale
-        void updateDeltaX();
-
         //- Update the local deltaT field
         // and adjust it to the minimum value optionally
         void update(scalar maxCo, Switch adjustTimeStep);
+
 
         //- Update the local deltaT field
         void update(scalar maxCo);

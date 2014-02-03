@@ -182,10 +182,24 @@ void mixedSubsonicSupersonicOutletFvPatchScalarField::updateCoeffs()
 	    
 	forAll(Tp, patchI)
 	{
+
 	    scalar Map = mag(normalVector[patchI] & Up[patchI])
 	        /sqrt((Cpp[patchI]/Cvp[patchI])*(Cpp[patchI]-Cvp[patchI])*Tp[patchI]);
-	    
+
+	   		
 	    valueFraction()[patchI] = pos(Map-1.0) ? 0.0 : 1.0;
+	    
+/*	    if(Map >= 1.0)
+	    {
+	        valueFraction()[patchI] = 0.0;
+	    }
+	    else
+	    {
+	        valueFraction()[patchI] = 1.0;
+	    }
+*/	    
+//	Info<< "\n Map = "  << Map << endl;
+//	Info<< "\n valueFraction = " << valueFraction()[patchI] << endl;	    
 	}
 
     mixedFvPatchScalarField::updateCoeffs();

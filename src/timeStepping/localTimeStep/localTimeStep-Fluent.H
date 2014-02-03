@@ -41,6 +41,7 @@ Description
 
 Author
     Oliver Borm  All rights reserved.
+     Sebastian Saegeler  All rights reserved.
 
 SourceFiles
     localTimeStep.C
@@ -88,9 +89,27 @@ class localTimeStep
        //- CFL number limited local time step field
        volScalarField CoDeltaT_;
 
-       //- characteristic length scale
-       volScalarField deltaX_;
+//       //- characteristic length scale
+//       volScalarField deltaX_;
 
+//       //- inviscid spectral radius
+//       volScalarField Lambda_inv;
+//
+//       //- viscous spectral radius
+//       volScalarField Lambda_vis;
+
+//       //- inviscid spectral radius
+//       volScalarField deltaT_inv;
+//
+//       //- viscous spectral radius
+//       volScalarField deltaT_vis;
+
+       //- maximum alowable time step in each cell
+       volScalarField maxDeltaT_;
+       
+       volScalarField maxDeltaTFluent_;       
+
+       
 
     // Private Member Functions
 
@@ -129,12 +148,16 @@ public:
             return CoDeltaT_;
         }
 
-        //- Update the characteristic length scale
-        void updateDeltaX();
+//        //- Update the characteristic length scale
+//        void updateDeltaX();
 
         //- Update the local deltaT field
         // and adjust it to the minimum value optionally
         void update(scalar maxCo, Switch adjustTimeStep);
+
+        //- Get the minimum CoDeltaT for the last timeStep
+        // to guarantee mass conservation
+        void updateLast(scalar maxCo, Switch adjustTimeStep);
 
         //- Update the local deltaT field
         void update(scalar maxCo);

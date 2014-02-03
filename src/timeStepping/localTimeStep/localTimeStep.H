@@ -30,8 +30,14 @@ Description
     does not exceed the specified value.
 
     References:
-    Blazek, Jiri. "Computational Fluid Dynamics: Principles and Applications",
-    2001, Referex Engineering, Elsevier, Chapter 6.1.4 Method 2
+    Weiss, Jonathan M. and Wayne A. Smith, "Preconditioning Applied to Variable
+    and Constant Density Flows." AIAA Journal 33/11 (November 1995): 2050–2057.
+
+    Arnone, Liou and Povinelli, "Multigrid Time-Accurate Integration of
+    Navier-Stokes Equations" AIAA 1993-3361, NASA-TM-106373
+
+    Mavriplis, D.J., Jameson, A. and Martinelli, L., "Multigrid Solution of the
+    Navier-Stokes Equations on Triangular Meshes." AIAA-89-0120
 
 Author
     Oliver Borm  All rights reserved.
@@ -82,11 +88,9 @@ class localTimeStep
        //- CFL number limited local time step field
        volScalarField CoDeltaT_;
 
-       //- projected summed areas of faces for all cells
-       volVectorField deltaS_;
-       
-       //- volScalarField of all cell volumes 
-       volScalarField cellVolume_;
+       //- characteristic length scale
+       volScalarField deltaX_;
+
 
     // Private Member Functions
 
@@ -96,8 +100,7 @@ class localTimeStep
         //- Disallow default bitwise assignment
         void operator=(const localTimeStep&);
 
-        //- Update the characteristic length scale
-        void updateDeltaX();
+
 
 public:
 
@@ -125,6 +128,15 @@ public:
         {
             return CoDeltaT_;
         }
+	
+	//- Return deltaX - needed for transonicStadyMultyDensityFoam
+	const volScalarField& deltaX() const
+        {
+            return deltaX_;
+        }
+
+        //- Update the characteristic length scale
+        void updateDeltaX();
 
         //- Update the local deltaT field
         // and adjust it to the minimum value optionally
